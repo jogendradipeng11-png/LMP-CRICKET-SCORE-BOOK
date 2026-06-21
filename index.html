@@ -141,7 +141,7 @@
                     <input id="matchId" value="match1">
                     <span class="label">Total Overs</span>
                     <input id="totalOversInput" type="number" value="20" min="1" max="90">
-                    <button id="initMatchBtn" class="secondary" style="width:100%;margin-top:8px;">Initialize / Update Info</button>
+                    <button id="initMatchBtn" class="secondary" style="width:100%;margin-top:8px;">Initialize Match</button>
                     <button id="resetMatchBtn" class="danger" style="width:100%;margin-top:8px;">🔄 Reset All Data</button>
                 </div>
                 <div class="flex-col">
@@ -157,11 +157,11 @@
                         <option value="teamA">Team A</option>
                         <option value="teamB">Team B</option>
                     </select>
-                    <span class="label">Current Over (e.g. 4.2)</span>
+                    <span class="label">Custom Current Over (e.g. 8.3)</span>
                     <input id="currentOvers" value="0.0">
                     <span class="label">Runs</span><input id="currentRuns" type="number" value="0">
                     <span class="label">Wickets</span><input id="currentWkts" type="number" value="0">
-                    <button id="updateScoreManualBtn" class="secondary" style="width:100%;margin-top:8px;">Set Score & Over Manually</button>
+                    <button id="updateScoreManualBtn" class="secondary" style="width:100%;margin-top:8px;">✅ Set Custom Over + Score</button>
                 </div>
             </div>
 
@@ -277,24 +277,22 @@
                 els.gridInfo.textContent = `(${count} balls • ${totalOvers} overs)`;
             }
 
-            // Manual Score + Custom Over Update
+            // Manual Custom Over + Score Update
             document.getElementById("updateScoreManualBtn").addEventListener("click", () => {
                 const ref = getMatchRef();
                 const bt = document.getElementById("battingTeam").value;
-                const overs = document.getElementById("currentOvers").value || "0.0";
+                const oversStr = document.getElementById("currentOvers").value.trim() || "0.0";
                 const runs = parseInt(document.getElementById("currentRuns").value) || 0;
                 const wkts = parseInt(document.getElementById("currentWkts").value) || 0;
 
                 ref.update({
-                    [`score/${bt}`]: { runs, wickets: wkts, overs },
+                    [`score/${bt}`]: { runs: runs, wickets: wkts, overs: oversStr },
                     battingTeam: bt,
-                    lastBall: `Manual Update: ${runs}/${wkts} (${overs})`
-                }).then(() => {
-                    alert("Score & Over Updated Successfully!");
-                });
+                    lastBall: `Manual Update → ${oversStr} (${runs}/${wkts})`
+                }).then(() => alert("Custom Over & Score Updated!")).catch(err => alert("Error: " + err.message));
             });
 
-            // Auto Scoring
+            // Auto Ball Scoring
             window.applyBall = function(runs, isWide=false, isNoBall=false, isWicket=false) {
                 const ref = getMatchRef();
                 ref.once("value").then(snap => {
@@ -360,9 +358,9 @@
             document.getElementById("wicketBtn").addEventListener("click", () => window.applyBall(0, false, false, true));
             document.getElementById("nextBallBtn").addEventListener("click", () => window.applyBall(0));
 
-            // Reset
+            // Reset Match
             document.getElementById("resetMatchBtn").addEventListener("click", () => {
-                if (confirm("Reset entire match?")) {
+                if (confirm("Reset all match data?")) {
                     getMatchRef().set({
                         teams: {teamA: document.getElementById("teamAName").value || "Team A", teamB: document.getElementById("teamBName").value || "Team B"},
                         score: {teamA: {runs:0,wickets:0,overs:"0.0"}, teamB: {runs:0,wickets:0,overs:"0.0"}},
@@ -373,11 +371,11 @@
                         status: "NOT STARTED",
                         lastBall: "Match Reset",
                         totalOvers: parseInt(document.getElementById("totalOversInput").value) || 20
-                    }).then(() => alert("Match Reset!"));
+                    }).then(() => alert("Match Reset Successfully!"));
                 }
             });
 
-            // Real-time Auto Refresh Listener
+            // Real-time Auto Refresh
             getMatchRef().on("value", (snap) => {
                 const data = snap.val() || {};
                 els.teams.textContent = `${data.teams?.teamA || "Team A"} vs ${data.teams?.teamB || "Team B"}`;
