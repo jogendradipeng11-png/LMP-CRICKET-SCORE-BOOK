@@ -84,7 +84,6 @@
     <div class="container">
         <h1>🏏 <span>LMP</span> Cricket Score Book <span style="font-size:16px;color:#8aa1c0;">3D Grid</span></h1>
 
-        <!-- Score Card -->
         <div class="card">
             <div class="teams" id="teams">Team A vs Team B</div>
             <div class="scoreline">
@@ -97,7 +96,6 @@
             </div>
         </div>
 
-        <!-- Batsmen & Bowler -->
         <div class="card">
             <div class="flex-row">
                 <div class="flex-col"><h3>🟢 Striker</h3><p id="striker" style="font-size:16px;">—</p></div>
@@ -106,13 +104,11 @@
             </div>
         </div>
 
-        <!-- Last Ball -->
         <div class="card">
             <h3>Last Ball</h3>
             <div class="last-ball-display" id="lastBall">No ball yet</div>
         </div>
 
-        <!-- Ball Grid -->
         <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
                 <h3>📊 Ball-by-Ball Grid <span id="gridInfo" style="font-weight:400;font-size:14px;color:#8aa1c0;">(0 overs)</span></h3>
@@ -132,7 +128,6 @@
             <div id="ballGridWrapper"><div id="ballGrid"></div></div>
         </div>
 
-        <!-- Admin Panel -->
         <div class="card">
             <h2>⚙️ Admin Panel</h2>
             <div class="flex-row">
@@ -244,9 +239,11 @@
             }
 
             function renderGrid(ballData = {}, totalOvers = 20, currentOver = 0) {
+                // Ensure totalOvers values always read customized limits set dynamically by the user
+                const configuredOvers = parseInt(document.getElementById("totalOversInput").value) || totalOvers;
                 els.ballGrid.innerHTML = "";
                 let count = 0;
-                for (let ov = 0; ov < totalOvers; ov++) {
+                for (let ov = 0; ov < configuredOvers; ov++) {
                     const row = document.createElement("div");
                     row.className = `grid-over-row ${ov === currentOver ? "current-over" : ""}`;
                     row.innerHTML = `<div class="over-label"><span class="over-num">Over ${ov+1}</span></div>`;
@@ -274,7 +271,7 @@
                     }
                     els.ballGrid.appendChild(row);
                 }
-                els.gridInfo.textContent = `(${count} balls • ${totalOvers} overs)`;
+                els.gridInfo.textContent = `(${count} balls • ${configuredOvers} overs)`;
             }
 
             // Manual Custom Over + Score Update
