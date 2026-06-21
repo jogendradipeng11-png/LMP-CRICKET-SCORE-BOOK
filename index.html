@@ -49,7 +49,6 @@
         .runs-buttons button { min-width: 38px; font-weight: 700; }
         .last-ball-display { font-size: 18px; font-weight: 600; padding: 6px 12px; background: #0d1a2b; border-radius: 6px; display: inline-block; }
 
-        /* 3D Grid Styles */
         #ballGridWrapper {
             transition: transform 0.6s ease;
             transform-style: preserve-3d;
@@ -143,7 +142,7 @@
                     <span class="label">Total Overs</span>
                     <input id="totalOversInput" type="number" value="20" min="1" max="90">
                     <button id="initMatchBtn" class="secondary" style="width:100%;margin-top:8px;">Initialize / Update Info</button>
-                    <button id="resetMatchBtn" class="danger" style="width:100%;margin-top:8px;">🔄 Reset All Data (New Match)</button>
+                    <button id="resetMatchBtn" class="danger" style="width:100%;margin-top:8px;">🔄 Reset All Data</button>
                 </div>
                 <div class="flex-col">
                     <span class="label">Team A</span><input id="teamAName" value="Team A">
@@ -158,7 +157,11 @@
                         <option value="teamA">Team A</option>
                         <option value="teamB">Team B</option>
                     </select>
-                    <button id="updateScoreManualBtn" class="secondary" style="width:100%;margin-top:8px;">Set Score Manually</button>
+                    <span class="label">Current Over (e.g. 4.2)</span>
+                    <input id="currentOvers" value="0.0">
+                    <span class="label">Runs</span><input id="currentRuns" type="number" value="0">
+                    <span class="label">Wickets</span><input id="currentWkts" type="number" value="0">
+                    <button id="updateScoreManualBtn" class="secondary" style="width:100%;margin-top:8px;">Set Score & Over Manually</button>
                 </div>
             </div>
 
@@ -199,7 +202,6 @@
             const matchIdInput = document.getElementById("matchId");
             const getMatchRef = () => db.ref("matches/" + (matchIdInput.value.trim() || "match1"));
 
-            // DOM Elements
             const els = {
                 teams: document.getElementById("teams"),
                 scoreA: document.getElementById("scoreA"),
@@ -218,7 +220,6 @@
             };
 
             let is3D = false, rotX = 0, rotY = 0;
-
             function update3D() {
                 if (is3D) {
                     els.ballGridWrapper.classList.add("_3d");
@@ -228,7 +229,6 @@
                     els.ballGridWrapper.style.transform = "rotateX(0deg) rotateY(0deg) scale(1)";
                 }
             }
-
             document.getElementById("toggle3D").onclick = () => { is3D = !is3D; update3D(); };
             document.getElementById("reset3D").onclick = () => { rotX = 0; rotY = 0; update3D(); };
 
@@ -277,16 +277,31 @@
                 els.gridInfo.textContent = `(${count} balls • ${totalOvers} overs)`;
             }
 
-            // Scoring Function
+            // Manual Score + Custom Over Update
+            document.getElementById("updateScoreManualBtn").addEventListener("click", () => {
+                const ref = getMatchRef();
+                const bt = document.getElementById("battingTeam").value;
+                const overs = document.getElementById("currentOvers").value || "0.0";
+                const runs = parseInt(document.getElementById("currentRuns").value) || 0;
+                const wkts = parseInt(document.getElementById("currentWkts").value) || 0;
+
+                ref.update({
+                    [`score/${bt}`]: { runs, wickets: wkts, overs },
+                    battingTeam: bt,
+                    lastBall: `Manual Update: ${runs}/${wkts} (${overs})`
+                }).then(() => {
+                    alert("Score & Over Updated Successfully!");
+                });
+            });
+
+            // Auto Scoring
             window.applyBall = function(runs, isWide=false, isNoBall=false, isWicket=false) {
                 const ref = getMatchRef();
                 ref.once("value").then(snap => {
                     let data = snap.val() || {};
                     const bt = data.battingTeam || "teamA";
-
                     if (!data.score) data.score = {};
-                    if (!data.batsmen) data.batsmen = {striker:{}, nonStriker:{}};
-                    if (!data.bowler) data.bowler = {};
+                    if (!data.batsmen) data.batsmen = {};
                     if (!data.ballByBall) data.ballByBall = {};
 
                     let btScore = data.score[bt] || {runs:0, wickets:0, overs:"0.0"};
@@ -296,7 +311,8 @@
                     const symbol = isWicket ? "W" : isWide ? "Wd" : isNoBall ? "Nb" : runs.toString();
                     data.ballByBall[ov.overs][ov.balls] = symbol;
 
-                    btScore.runs = (btScore.runs || 0) + runs;
+                    btScore.runs += runs;
+                    if (!data.bowler) data.bowler = {};
                     data.bowler.runs = (data.bowler.runs || 0) + runs;
 
                     const legal = !isWide && !isNoBall;
@@ -344,25 +360,25 @@
             document.getElementById("wicketBtn").addEventListener("click", () => window.applyBall(0, false, false, true));
             document.getElementById("nextBallBtn").addEventListener("click", () => window.applyBall(0));
 
-            // Reset Button
+            // Reset
             document.getElementById("resetMatchBtn").addEventListener("click", () => {
-                if (confirm("Reset all data for this match?")) {
+                if (confirm("Reset entire match?")) {
                     getMatchRef().set({
-                        teams: {teamA: "Team A", teamB: "Team B"},
+                        teams: {teamA: document.getElementById("teamAName").value || "Team A", teamB: document.getElementById("teamBName").value || "Team B"},
                         score: {teamA: {runs:0,wickets:0,overs:"0.0"}, teamB: {runs:0,wickets:0,overs:"0.0"}},
-                        batsmen: {striker: {name:"Batsman 1",runs:0,balls:0}, nonStriker: {name:"Batsman 2",runs:0,balls:0}},
-                        bowler: {name:"Bowler 1", overs:"0.0", runs:0, wickets:0},
+                        batsmen: {striker: {name:document.getElementById("strikerName").value||"Batsman 1",runs:0,balls:0}, nonStriker: {name:document.getElementById("nonStrikerName").value||"Batsman 2",runs:0,balls:0}},
+                        bowler: {name:document.getElementById("bowlerName").value||"Bowler 1", overs:"0.0", runs:0, wickets:0},
                         ballByBall: {},
                         battingTeam: "teamA",
                         status: "NOT STARTED",
                         lastBall: "Match Reset",
                         totalOvers: parseInt(document.getElementById("totalOversInput").value) || 20
-                    }).then(() => alert("Match Reset Successfully!"));
+                    }).then(() => alert("Match Reset!"));
                 }
             });
 
-            // Live Listener
-            getMatchRef().on("value", snap => {
+            // Real-time Auto Refresh Listener
+            getMatchRef().on("value", (snap) => {
                 const data = snap.val() || {};
                 els.teams.textContent = `${data.teams?.teamA || "Team A"} vs ${data.teams?.teamB || "Team B"}`;
 
