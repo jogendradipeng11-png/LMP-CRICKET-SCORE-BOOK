@@ -84,6 +84,7 @@
     <div class="container">
         <h1>🏏 <span>LMP</span> Cricket Score Book <span style="font-size:16px;color:#8aa1c0;">3D Grid</span></h1>
 
+        <!-- Score Card -->
         <div class="card">
             <div class="teams" id="teams">Team A vs Team B</div>
             <div class="scoreline">
@@ -96,6 +97,7 @@
             </div>
         </div>
 
+        <!-- Batsmen & Bowler -->
         <div class="card">
             <div class="flex-row">
                 <div class="flex-col"><h3>🟢 Striker</h3><p id="striker" style="font-size:16px;">—</p></div>
@@ -104,11 +106,13 @@
             </div>
         </div>
 
+        <!-- Last Ball -->
         <div class="card">
             <h3>Last Ball</h3>
             <div class="last-ball-display" id="lastBall">No ball yet</div>
         </div>
 
+        <!-- Ball Grid -->
         <div class="card">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;">
                 <h3>📊 Ball-by-Ball Grid <span id="gridInfo" style="font-weight:400;font-size:14px;color:#8aa1c0;">(0 overs)</span></h3>
@@ -128,6 +132,7 @@
             <div id="ballGridWrapper"><div id="ballGrid"></div></div>
         </div>
 
+        <!-- Admin Panel -->
         <div class="card">
             <h2>⚙️ Admin Panel</h2>
             <div class="flex-row">
@@ -136,7 +141,7 @@
                     <input id="matchId" value="match1">
                     <span class="label">Total Overs</span>
                     <input id="totalOversInput" type="number" value="20" min="1" max="90">
-                    <button id="initMatchBtn" class="secondary" style="width:100%;margin-top:8px;">Initialize Match</button>
+                    <button id="initMatchBtn" class="secondary" style="width:100%;margin-top:8px;">🚀 Initialize / Start Match</button>
                     <button id="resetMatchBtn" class="danger" style="width:100%;margin-top:8px;">🔄 Reset All Data</button>
                 </div>
                 <div class="flex-col">
@@ -152,11 +157,11 @@
                         <option value="teamA">Team A</option>
                         <option value="teamB">Team B</option>
                     </select>
-                    <span class="label">Custom Current Over (e.g. 8.3)</span>
+                    <span class="label">Starting Over (e.g. 0.0 or 5.2)</span>
                     <input id="currentOvers" value="0.0">
-                    <span class="label">Runs</span><input id="currentRuns" type="number" value="0">
-                    <span class="label">Wickets</span><input id="currentWkts" type="number" value="0">
-                    <button id="updateScoreManualBtn" class="secondary" style="width:100%;margin-top:8px;">✅ Set Custom Over + Score</button>
+                    <span class="label">Starting Runs</span><input id="currentRuns" type="number" value="0">
+                    <span class="label">Starting Wickets</span><input id="currentWkts" type="number" value="0">
+                    <button id="updateScoreManualBtn" class="secondary" style="width:100%;margin-top:8px;">✅ Update Score & Over</button>
                 </div>
             </div>
 
@@ -239,11 +244,9 @@
             }
 
             function renderGrid(ballData = {}, totalOvers = 20, currentOver = 0) {
-                // Ensure totalOvers values always read customized limits set dynamically by the user
-                const configuredOvers = parseInt(document.getElementById("totalOversInput").value) || totalOvers;
                 els.ballGrid.innerHTML = "";
                 let count = 0;
-                for (let ov = 0; ov < configuredOvers; ov++) {
+                for (let ov = 0; ov < totalOvers; ov++) {
                     const row = document.createElement("div");
                     row.className = `grid-over-row ${ov === currentOver ? "current-over" : ""}`;
                     row.innerHTML = `<div class="over-label"><span class="over-num">Over ${ov+1}</span></div>`;
@@ -271,10 +274,42 @@
                     }
                     els.ballGrid.appendChild(row);
                 }
-                els.gridInfo.textContent = `(${count} balls • ${configuredOvers} overs)`;
+                els.gridInfo.textContent = `(${count} balls • ${totalOvers} overs)`;
             }
 
-            // Manual Custom Over + Score Update
+            // Initialize / Start Match with Custom Over
+            document.getElementById("initMatchBtn").addEventListener("click", () => {
+                const ref = getMatchRef();
+                const startingOvers = document.getElementById("currentOvers").value.trim() || "0.0";
+                const runs = parseInt(document.getElementById("currentRuns").value) || 0;
+                const wkts = parseInt(document.getElementById("currentWkts").value) || 0;
+                const bt = document.getElementById("battingTeam").value;
+
+                ref.set({
+                    teams: {
+                        teamA: document.getElementById("teamAName").value.trim() || "Team A",
+                        teamB: document.getElementById("teamBName").value.trim() || "Team B"
+                    },
+                    score: {
+                        teamA: { runs: bt === "teamA" ? runs : 0, wickets: bt === "teamA" ? wkts : 0, overs: bt === "teamA" ? startingOvers : "0.0" },
+                        teamB: { runs: bt === "teamB" ? runs : 0, wickets: bt === "teamB" ? wkts : 0, overs: bt === "teamB" ? startingOvers : "0.0" }
+                    },
+                    batsmen: {
+                        striker: { name: document.getElementById("strikerName").value.trim() || "Batsman 1", runs: 0, balls: 0 },
+                        nonStriker: { name: document.getElementById("nonStrikerName").value.trim() || "Batsman 2", runs: 0, balls: 0 }
+                    },
+                    bowler: { name: document.getElementById("bowlerName").value.trim() || "Bowler 1", overs: "0.0", runs: 0, wickets: 0 },
+                    ballByBall: {},
+                    battingTeam: bt,
+                    status: "LIVE",
+                    lastBall: "Match Started",
+                    totalOvers: parseInt(document.getElementById("totalOversInput").value) || 20
+                }).then(() => {
+                    alert("Match Initialized Successfully with Custom Over!");
+                });
+            });
+
+            // Manual Update
             document.getElementById("updateScoreManualBtn").addEventListener("click", () => {
                 const ref = getMatchRef();
                 const bt = document.getElementById("battingTeam").value;
@@ -283,13 +318,13 @@
                 const wkts = parseInt(document.getElementById("currentWkts").value) || 0;
 
                 ref.update({
-                    [`score/${bt}`]: { runs: runs, wickets: wkts, overs: oversStr },
+                    [`score/${bt}`]: { runs, wickets: wkts, overs: oversStr },
                     battingTeam: bt,
-                    lastBall: `Manual Update → ${oversStr} (${runs}/${wkts})`
-                }).then(() => alert("Custom Over & Score Updated!")).catch(err => alert("Error: " + err.message));
+                    lastBall: `Manual Update: ${oversStr} (${runs}/${wkts})`
+                }).then(() => alert("Score & Over Updated!"));
             });
 
-            // Auto Ball Scoring
+            // Auto Ball Functions (same as before)
             window.applyBall = function(runs, isWide=false, isNoBall=false, isWicket=false) {
                 const ref = getMatchRef();
                 ref.once("value").then(snap => {
@@ -311,10 +346,7 @@
                     data.bowler.runs = (data.bowler.runs || 0) + runs;
 
                     const legal = !isWide && !isNoBall;
-                    if (legal || isWicket) {
-                        ov.balls++;
-                        if (data.batsmen.striker) data.batsmen.striker.balls = (data.batsmen.striker.balls || 0) + 1;
-                    }
+                    if (legal || isWicket) ov.balls++;
 
                     if (isWicket) {
                         btScore.wickets = (btScore.wickets || 0) + 1;
@@ -347,32 +379,30 @@
             };
 
             // Button Listeners
-            document.querySelectorAll("[data-runs]").forEach(btn => {
-                btn.addEventListener("click", () => window.applyBall(parseInt(btn.getAttribute("data-runs"))));
-            });
+            document.querySelectorAll("[data-runs]").forEach(btn => btn.addEventListener("click", () => window.applyBall(parseInt(btn.getAttribute("data-runs")))));
             document.getElementById("wideBtn").addEventListener("click", () => window.applyBall(1, true));
             document.getElementById("noBallBtn").addEventListener("click", () => window.applyBall(1, false, true));
             document.getElementById("wicketBtn").addEventListener("click", () => window.applyBall(0, false, false, true));
             document.getElementById("nextBallBtn").addEventListener("click", () => window.applyBall(0));
 
-            // Reset Match
+            // Reset
             document.getElementById("resetMatchBtn").addEventListener("click", () => {
-                if (confirm("Reset all match data?")) {
+                if (confirm("Reset all data?")) {
                     getMatchRef().set({
-                        teams: {teamA: document.getElementById("teamAName").value || "Team A", teamB: document.getElementById("teamBName").value || "Team B"},
+                        teams: {teamA: "Team A", teamB: "Team B"},
                         score: {teamA: {runs:0,wickets:0,overs:"0.0"}, teamB: {runs:0,wickets:0,overs:"0.0"}},
-                        batsmen: {striker: {name:document.getElementById("strikerName").value||"Batsman 1",runs:0,balls:0}, nonStriker: {name:document.getElementById("nonStrikerName").value||"Batsman 2",runs:0,balls:0}},
-                        bowler: {name:document.getElementById("bowlerName").value||"Bowler 1", overs:"0.0", runs:0, wickets:0},
+                        batsmen: {striker: {name:"Batsman 1",runs:0,balls:0}, nonStriker: {name:"Batsman 2",runs:0,balls:0}},
+                        bowler: {name:"Bowler 1", overs:"0.0", runs:0, wickets:0},
                         ballByBall: {},
                         battingTeam: "teamA",
                         status: "NOT STARTED",
                         lastBall: "Match Reset",
                         totalOvers: parseInt(document.getElementById("totalOversInput").value) || 20
-                    }).then(() => alert("Match Reset Successfully!"));
+                    }).then(() => alert("Match Reset!"));
                 }
             });
 
-            // Real-time Auto Refresh
+            // Real-time Listener
             getMatchRef().on("value", (snap) => {
                 const data = snap.val() || {};
                 els.teams.textContent = `${data.teams?.teamA || "Team A"} vs ${data.teams?.teamB || "Team B"}`;
