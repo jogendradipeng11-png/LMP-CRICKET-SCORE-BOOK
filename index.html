@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Viewport configured to fully permit native mobile user pinch-to-zoom scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LMP Cricket Score Book - Offline Mobile</title>
     <style>
@@ -98,6 +99,7 @@
         
         .score-area-inputs { margin-top: 10px; padding-top: 6px; border-top: 1px dashed #1e2d44; }
     </style>
+    <!-- Embedded libraries for PDF generation and Cloud DB Sync -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -108,6 +110,7 @@
 
         <div id="matchResultBanner" class="result-banner"></div>
 
+        <!-- Live Scoreboard Card -->
         <div class="card">
             <div class="match-header">
                 <div class="teams-title" id="teamsDisplay">Team A vs Team B</div>
@@ -138,6 +141,7 @@
                 </div>
             </div>
 
+            <!-- In-Place Score Area Personnel Settings -->
             <div class="score-area-inputs">
                 <div class="flex-equal">
                     <div>
@@ -161,6 +165,7 @@
             </div>
         </div>
 
+        <!-- Ball-by-Ball Control Panel -->
         <div class="card">
             <h3>Ball Controls</h3>
             <div class="control-group">
@@ -183,11 +188,13 @@
             </div>
         </div>
 
+        <!-- Over-by-Over Horizontal Matrix View -->
         <div class="card">
             <h3>📊 Match Grid Matrix</h3>
             <div class="grid-scroll" id="matrixGrid"></div>
         </div>
 
+        <!-- Innings & Game Setup Config -->
         <div class="card">
             <h3>⚙️ Innings & Match Manager</h3>
             
@@ -219,7 +226,8 @@
         </div>
     </div>
 
-    <div id="pdfPrintContainer" style="position: absolute; top: 0; left: 0; width: 750px; height: 0; overflow: hidden; background:#ffffff; font-family:Arial, sans-serif;"></div>
+    <!-- Decoupled style settings to guarantee the rendering engine calculates element dimensions perfectly without producing white or empty canvas boxes -->
+    <div id="pdfPrintContainer" style="position: fixed; top: 0; left: 0; width: 750px; z-index: -9999; opacity: 0; pointer-events: none; background: #ffffff; font-family: Arial, sans-serif;"></div>
 
     <script>
         // Initialize Firebase Realtime Database Connection Profiles Securely
@@ -580,7 +588,6 @@
                 inn.nonStriker = temp;
                 inn.oversHistory.push([]);
                 
-                // Prompt user for the next bowler's name explicitly at over finish loop
                 const nextBowlerPrompt = prompt("Over complete! Enter next bowler name to ball new bowling:", inn.bowler.name) || "New Bowler";
                 
                 if(!inn.oversBowlers) inn.oversBowlers = [];
@@ -646,7 +653,6 @@
         els.selectInnings.addEventListener('change', (e) => {
             const targetInnings = e.target.value;
             
-            // Automatic structural reversal mapping for Innings 2 setup configuration workflow
             if (targetInnings === 'innings2') {
                 gameState.innings2.battingTeam = gameState.innings1.bowlingTeam;
                 gameState.innings2.bowlingTeam = gameState.innings1.battingTeam;
@@ -700,7 +706,7 @@
             const pDiv = document.getElementById('pdfPrintContainer');
             
             let htmlPayload = `
-                <div style="background:#ffffff; color:#000000; padding:25px; min-height:842px;">
+                <div style="background:#ffffff; color:#000000; padding:25px; box-sizing:border-box;">
                     <div style="text-align:center; border-bottom:3px solid #1e88e5; padding-bottom:10px; margin-bottom:20px;">
                         <h1 style="color:#000000; margin:0; font-size:26px;">LMP Cricket Score Book Report</h1>
                         <p style="color:#444444; margin:5px 0 0 0; font-size:12px;">Generated Offline • Max Match Overs: ${gameState.maxOvers}</p>
@@ -710,7 +716,6 @@
             ['innings1', 'innings2'].forEach((innKey, index) => {
                 const inn = gameState[innKey];
                 const oversLabel = `${Math.floor(inn.totalBalls / 6)}.${inn.totalBalls % 6}`;
-                // Set explicit target pagination rules so that each innings displays natively on a brand new page
                 const breakStyleRule = index > 0 ? 'page-break-before: always; padding-top:20px;' : '';
                 
                 htmlPayload += `
