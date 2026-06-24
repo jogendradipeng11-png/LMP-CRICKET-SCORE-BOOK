@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Updated viewport to permit mobile user pinch zoom modifications -->
+    <!-- Viewport configured to fully permit native mobile user pinch-to-zoom scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LMP Cricket Score Book - Offline Mobile</title>
     <style>
@@ -27,7 +27,6 @@
         }
         .card h3 { font-size: 14px; font-weight: 600; color: #8aa1c0; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #1e2d44; padding-bottom: 4px; }
         
-        /* Match Result Card Banner CSS styles */
         .result-banner {
             display: none;
             padding: 12px;
@@ -41,26 +40,22 @@
         .result-banner.win { background: rgba(67, 160, 71, 0.2); border: 2px solid #43a047; color: #81c784; }
         .result-banner.loss { background: rgba(229, 57, 53, 0.2); border: 2px solid #e53935; color: #ef5350; }
         
-        /* Innings Header & Match Info */
         .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .teams-title { font-size: 16px; font-weight: 700; color: #fff; }
         .innings-badge { background: #fdd835; color: #111; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px; text-transform: uppercase; }
         
-        /* Score Display */
         .score-display { display: flex; justify-content: space-between; align-items: baseline; margin: 8px 0; }
         .main-score { font-size: 36px; font-weight: 800; color: #fff; }
         .main-score span { font-size: 22px; color: #8aa1c0; font-weight: 400; }
         .math-details { text-align: right; font-size: 13px; color: #9aaec9; }
         .rr-text { font-weight: 600; color: #43a047; }
 
-        /* Batsmen & Bowler Grid */
         .live-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
         .stat-line { background: #0d1a2b; padding: 8px; border-radius: 6px; font-size: 13px; border-left: 3px solid #2a3a55; }
         .stat-line.active { border-left-color: #43a047; background: rgba(67, 160, 71, 0.05); }
         .stat-line p { font-weight: 700; color: #fff; margin-bottom: 2px; }
         .stat-line span { font-size: 12px; color: #9aaec9; font-weight: 400; }
 
-        /* Ball Controls */
         .control-group { display: flex; flex-direction: column; gap: 8px; }
         .btn-row { display: flex; gap: 6px; width: 100%; }
         button {
@@ -76,7 +71,6 @@
         button.extra { background: #3949ab; }
         button.wicket { background: #e53935; }
         
-        /* Grid Settings & Box */
         .grid-scroll { overflow-x: auto; white-space: nowrap; padding-bottom: 4px; margin-top: 4px; }
         .grid-over-row { display: inline-flex; flex-direction: column; margin-right: 8px; background: #0d1a2b; padding: 6px; border-radius: 8px; vertical-align: top; min-width: 68px; align-items: center;}
         .grid-over-row.current-over { border: 1px solid #1e88e5; background: rgba(30, 136, 229, 0.05); }
@@ -93,7 +87,6 @@
         .ball-box.wicket { background: #e53935; color: #fff; }
         .ball-box.extra { background: #fdd835; color: #111; border-color: #fdd835; }
 
-        /* Setup / Config Fields */
         label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #8aa1c0; display: block; margin-top: 6px; }
         input, select { width: 100%; padding: 8px 10px; margin-top: 2px; border-radius: 6px; border: 1px solid #25344d; background: #0b1726; color: #f5f5f5; font-size: 14px; }
         .btn-small { font-size: 12px; padding: 6px 10px; border-radius: 4px; background: #2a3a55; }
@@ -104,12 +97,13 @@
         .recent-balls { display: flex; gap: 6px; align-items: center; margin-top: 4px; min-height: 28px;}
         .recent-label { font-size: 12px; color: #8aa1c0; font-weight: 600; }
     </style>
+    <!-- Embedded offline fallback library for cross-platform styling generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>🏏 <span>LMP</span> Score Book</h1>
 
-        <!-- Result Banner Alert Window Box -->
         <div id="matchResultBanner" class="result-banner"></div>
 
         <!-- Live Scoreboard Card -->
@@ -138,7 +132,7 @@
                 </div>
                 <div class="stat-line" style="grid-column: span 2;" id="bowlerBox">
                     <p id="bowlerName">Bowler</p>
-                    <span id="bowlerStats">0-0-0-0</span>
+                    <span id="bowlerStats">O: 0.0 | R: 0 | W: 0</span>
                 </div>
             </div>
             
@@ -212,15 +206,18 @@
             <label>Current Over Bowler</label>
             <input id="inpBowler" value="Bowler 1">
 
-            <label>Total Match Overs (Applies to both Innings)</label>
+            <label>Total Match Overs (Locked for both Innings)</label>
             <input id="inpMaxOvers" type="number" value="20">
 
             <div class="btn-row" style="margin-top:12px;">
-                <button class="btn-small" id="btnApplySetup" style="background:#43a047;">Apply Settings</button>
+                <button class="btn-small" id="btnExportPDF" style="background:#0288d1;">📊 Export Match PDF</button>
                 <button class="btn-small btn-danger" id="btnResetMatch">Reset Match</button>
             </div>
         </div>
     </div>
+
+    <!-- Hidden Printing Container Module for neat clean reports layout formatting -->
+    <div id="pdfPrintContainer" style="display:none; background:#ffffff; color:#000000; padding:25px; font-family:Arial, sans-serif;"></div>
 
     <script>
         let gameState = {
@@ -231,24 +228,28 @@
                 runs: 0, wickets: 0, totalBalls: 0,
                 striker: { name: 'Batsman 1', runs: 0, balls: 0 },
                 nonStriker: { name: 'Batsman 2', runs: 0, balls: 0 },
-                bowler: { name: 'Bowler 1', overs: 0, maidens: 0, runs: 0, wickets: 0, currentOverBalls: 0 },
+                bowler: { name: 'Bowler 1', runs: 0, wickets: 0, balls: 0 },
                 oversHistory: [[]],
-                logHistory: []
+                logHistory: [],
+                batsmenRegistry: {}, // Individual player stats ledger tracker database mappings
+                bowlersRegistry: {}
             },
             innings2: {
                 battingTeam: 'Team B', bowlingTeam: 'Team A',
                 runs: 0, wickets: 0, totalBalls: 0,
                 striker: { name: 'Batsman 1', runs: 0, balls: 0 },
                 nonStriker: { name: 'Batsman 2', runs: 0, balls: 0 },
-                bowler: { name: 'Bowler 1', overs: 0, maidens: 0, runs: 0, wickets: 0, currentOverBalls: 0 },
+                bowler: { name: 'Bowler 1', runs: 0, wickets: 0, balls: 0 },
                 oversHistory: [[]],
-                logHistory: []
+                logHistory: [],
+                batsmenRegistry: {},
+                bowlersRegistry: {}
             }
         };
 
         const localCache = localStorage.getItem('lmp_offline_scoreboard');
         if (localCache) {
-            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache parsing error, starting fresh"); }
+            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache parsing error, resetting state data loop context"); }
         }
 
         function saveState() {
@@ -276,13 +277,70 @@
             inpNonStriker: document.getElementById('inpNonStriker'),
             inpBowler: document.getElementById('inpBowler'),
             inpMaxOvers: document.getElementById('inpMaxOvers'),
-            btnApplySetup: document.getElementById('btnApplySetup'),
             btnResetMatch: document.getElementById('btnResetMatch'),
-            matchResultBanner: document.getElementById('matchResultBanner')
+            matchResultBanner: document.getElementById('matchResultBanner'),
+            btnExportPDF: document.getElementById('btnExportPDF')
         };
 
         function getActiveData() {
             return gameState[gameState.activeInnings];
+        }
+
+        // Real-time automatic name synchronization bindings mapping
+        function syncInputsToState() {
+            const inn = getActiveData();
+            inn.battingTeam = els.inpBattingTeam.value.trim() || 'Team A';
+            inn.bowlingTeam = els.inpBowlingTeam.value.trim() || 'Team B';
+            
+            // Re-map active structural profiles on the fly
+            const sName = els.inpStriker.value.trim() || 'Batsman 1';
+            const nsName = els.inpNonStriker.value.trim() || 'Batsman 2';
+            const bName = els.inpBowler.value.trim() || 'Bowler 1';
+
+            if(inn.striker.name !== sName) {
+                savePlayerStatsToRegistry(inn, 'striker');
+                inn.striker = loadPlayerStatsFromRegistry(inn, sName, 'batsman');
+            }
+            if(inn.nonStriker.name !== nsName) {
+                savePlayerStatsToRegistry(inn, 'nonStriker');
+                inn.nonStriker = loadPlayerStatsFromRegistry(inn, nsName, 'batsman');
+            }
+            if(inn.bowler.name !== bName) {
+                savePlayerStatsToRegistry(inn, 'bowler');
+                inn.bowler = loadPlayerStatsFromRegistry(inn, bName, 'bowler');
+            }
+
+            saveState();
+            renderScoreboard();
+        }
+
+        function savePlayerStatsToRegistry(inn, role) {
+            if(!inn.batsmenRegistry) inn.batsmenRegistry = {};
+            if(!inn.bowlersRegistry) inn.bowlersRegistry = {};
+
+            if(role === 'striker' && inn.striker.name) {
+                inn.batsmenRegistry[inn.striker.name] = { runs: inn.striker.runs, balls: inn.striker.balls };
+            }
+            if(role === 'nonStriker' && inn.nonStriker.name) {
+                inn.batsmenRegistry[inn.nonStriker.name] = { runs: inn.nonStriker.runs, balls: inn.nonStriker.balls };
+            }
+            if(role === 'bowler' && inn.bowler.name) {
+                inn.bowlersRegistry[inn.bowler.name] = { runs: inn.bowler.runs, wickets: inn.bowler.wickets, balls: inn.bowler.balls };
+            }
+        }
+
+        function loadPlayerStatsFromRegistry(inn, name, type) {
+            if(type === 'batsman') {
+                if(inn.batsmenRegistry && inn.batsmenRegistry[name]) {
+                    return { name: name, runs: inn.batsmenRegistry[name].runs, balls: inn.batsmenRegistry[name].balls };
+                }
+                return { name: name, runs: 0, balls: 0 };
+            } else {
+                if(inn.bowlersRegistry && inn.bowlersRegistry[name]) {
+                    return { name: name, runs: inn.bowlersRegistry[name].runs, wickets: inn.bowlersRegistry[name].wickets, balls: inn.bowlersRegistry[name].balls };
+                }
+                return { name: name, runs: 0, wickets: 0, balls: 0 };
+            }
         }
 
         function syncConfigUI() {
@@ -309,13 +367,11 @@
             return box;
         }
 
-        // Engine parsing utility to check total complete statuses 
         function checkMatchStatus() {
             const i1 = gameState.innings1;
             const i2 = gameState.innings2;
             const maxBalls = gameState.maxOvers * 6;
 
-            // Target condition parameters setup validation
             if (i1.totalBalls === 0 && i1.runs === 0) {
                 els.matchResultBanner.style.display = 'none';
                 return;
@@ -325,7 +381,6 @@
             const isI2FinishedOrActive = i2.totalBalls > 0 || i2.wickets > 0 || gameState.activeInnings === 'innings2';
             
             if (isI2FinishedOrActive) {
-                // Scenario A: Innings 2 successfully tracked and passed score target
                 if (i2.runs >= target) {
                     els.matchResultBanner.className = "result-banner win";
                     els.matchResultBanner.innerHTML = `🎉 Congratulations to ${i2.battingTeam}! <br> You won the match by tracking down the target!`;
@@ -333,7 +388,6 @@
                     return;
                 }
                 
-                // Scenario B: Innings 2 resource tracking elements exhausted (Balls or Wickets complete)
                 const i2BallsExhausted = i2.totalBalls >= maxBalls;
                 const i2WicketsExhausted = i2.wickets >= 10;
                 
@@ -370,8 +424,9 @@
             els.nonStrikerName.textContent = inn.nonStriker.name;
             els.nonStrikerStats.textContent = `${inn.nonStriker.runs} (${inn.nonStriker.balls})`;
             
+            const bowlerOversText = `${Math.floor(inn.bowler.balls / 6)}.${inn.bowler.balls % 6}`;
             els.bowlerName.textContent = inn.bowler.name;
-            els.bowlerStats.textContent = `O: ${Math.floor(inn.totalBalls/6)}.${inn.totalBalls%6} | R: ${inn.bowler.runs} | W: ${inn.bowler.wickets}`;
+            els.bowlerStats.textContent = `O: ${bowlerOversText} | R: ${inn.bowler.runs} | W: ${inn.bowler.wickets}`;
 
             els.recentBallsRow.innerHTML = '';
             const currentOverIdx = inn.oversHistory.length - 1;
@@ -420,7 +475,9 @@
             const clone = {
                 runs: inn.runs, wickets: inn.wickets, totalBalls: inn.totalBalls,
                 striker: { ...inn.striker }, nonStriker: { ...inn.nonStriker },
-                bowler: { ...inn.bowler }, oversHistory: JSON.parse(JSON.stringify(inn.oversHistory))
+                bowler: { ...inn.bowler }, oversHistory: JSON.parse(JSON.stringify(inn.oversHistory)),
+                batsmenRegistry: JSON.parse(JSON.stringify(inn.batsmenRegistry || {})),
+                bowlersRegistry: JSON.parse(JSON.stringify(inn.bowlersRegistry || {}))
             };
             inn.logHistory.push(clone);
         }
@@ -455,6 +512,7 @@
                 inn.striker.runs += runs;
                 inn.striker.balls += 1;
                 inn.totalBalls += 1;
+                inn.bowler.balls += 1;
             }
 
             let currentOverIdx = inn.oversHistory.length - 1;
@@ -471,22 +529,46 @@
             let legalDeliveriesCount = currentOverRow.filter(s => !s.includes('Wd') && !s.includes('Nb')).length;
 
             if (legalDeliveriesCount >= 6) {
+                // Save current bowler data to registry cache before rotating
+                savePlayerStatsToRegistry(inn, 'bowler');
+                
                 const temp = inn.striker;
                 inn.striker = inn.nonStriker;
                 inn.nonStriker = temp;
                 inn.oversHistory.push([]);
+                
+                // Prompt user cleanly in-place or leave placeholder for instant over sequential change update
+                inn.bowler = { name: "New Bowler", runs: 0, wickets: 0, balls: 0 };
+                els.inpBowler.value = "New Bowler";
             }
 
             if (isWicket) {
+                savePlayerStatsToRegistry(inn, 'striker'); // Cache dismissed batsman
                 inn.striker.name = "New Batsman";
                 inn.striker.runs = 0;
                 inn.striker.balls = 0;
+                els.inpStriker.value = "New Batsman";
             }
+
+            // Sync structural memory layers immediately
+            savePlayerStatsToRegistry(inn, 'striker');
+            savePlayerStatsToRegistry(inn, 'nonStriker');
+            savePlayerStatsToRegistry(inn, 'bowler');
 
             saveState();
             renderScoreboard();
-            syncConfigUI();
         }
+
+        // Live Input Observers Setup loops
+        [els.inpBattingTeam, els.inpBowlingTeam, els.inpStriker, els.inpNonStriker, els.inpBowler].forEach(element => {
+            element.addEventListener('input', syncInputsToState);
+        });
+
+        els.inpMaxOvers.addEventListener('input', () => {
+            gameState.maxOvers = parseInt(els.inpMaxOvers.value) || 20;
+            saveState();
+            renderScoreboard();
+        });
 
         document.querySelectorAll('button.runs').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -510,6 +592,9 @@
                 inn.nonStriker = previous.nonStriker;
                 inn.bowler = previous.bowler;
                 inn.oversHistory = previous.oversHistory;
+                inn.batsmenRegistry = previous.batsmenRegistry || {};
+                inn.bowlersRegistry = previous.bowlersRegistry || {};
+                
                 saveState();
                 renderScoreboard();
                 syncConfigUI();
@@ -525,23 +610,6 @@
             syncConfigUI();
         });
 
-        els.btnApplySetup.addEventListener('click', () => {
-            const inn = getActiveData();
-            
-            // Fixed Global Overs synchronization assignment rule logic
-            gameState.maxOvers = parseInt(els.inpMaxOvers.value) || 20;
-            
-            inn.battingTeam = els.inpBattingTeam.value.trim();
-            inn.bowlingTeam = els.inpBowlingTeam.value.trim();
-            inn.striker.name = els.inpStriker.value.trim();
-            inn.nonStriker.name = els.inpNonStriker.value.trim();
-            inn.bowler.name = els.inpBowler.value.trim();
-            
-            saveState();
-            renderScoreboard();
-            alert("Settings applied successfully!");
-        });
-
         els.btnResetMatch.addEventListener('click', () => {
             if(confirm("Are you sure you want to completely clear this local match history database?")) {
                 localStorage.removeItem('lmp_offline_scoreboard');
@@ -549,6 +617,131 @@
             }
         });
 
+        // Deep Analytical Export Engine Generator System
+        els.btnExportPDF.addEventListener('click', () => {
+            const pDiv = document.getElementById('pdfPrintContainer');
+            
+            let htmlPayload = `
+                <div style="text-align:center; border-bottom:3px solid #1e88e5; padding-bottom:10px; margin-bottom:20px;">
+                    <h1 style="color:#111; margin:0; font-size:26px;">🏏 LMP Cricket Score Book Report</h1>
+                    <p style="color:#555; margin:5px 0 0 0; font-size:12px;">Generated Offline • Max Match Overs: ${gameState.maxOvers}</p>
+                </div>
+            `;
+
+            ['innings1', 'innings2'].forEach((innKey, index) => {
+                const inn = gameState[innKey];
+                const oversLabel = `${Math.floor(inn.totalBalls / 6)}.${inn.totalBalls % 6}`;
+                
+                htmlPayload += `
+                    <div style="margin-bottom:30px; page-break-inside:avoid;">
+                        <h2 style="background:#0b1726; color:#fff; padding:6px 12px; font-size:16px; border-radius:4px; margin-bottom:10px;">
+                            Innings ${index + 1}: ${inn.battingTeam} Batting Performance Ledger
+                        </h2>
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:14px;">
+                            <tr style="background:#f5f5f5; text-align:left;">
+                                <th style="padding:6px; border:1px solid #ccc;">Summary Metric Score</th>
+                                <th style="padding:6px; border:1px solid #ccc;">Overs Bowled</th>
+                                <th style="padding:6px; border:1px solid #ccc;">Current Run Rate</th>
+                            </tr>
+                            <tr>
+                                <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">${inn.runs} / ${inn.wickets}</td>
+                                <td style="padding:6px; border:1px solid #ccc;">${oversLabel} / ${gameState.maxOvers}</td>
+                                <td style="padding:6px; border:1px solid #ccc;">${inn.totalBalls > 0 ? ((inn.runs * 6) / inn.totalBalls).toFixed(2) : '0.00'}</td>
+                            </tr>
+                        </table>
+
+                        <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">🏏 Batsmen Batting Ledger Breakdowns</h3>
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:13px;">
+                            <tr style="background:#f9f9f9; text-align:left;">
+                                <th style="padding:6px; border:1px solid #ccc;">Batsman Profile Designation Name</th>
+                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Total Runs Secured</th>
+                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Legal Deliveries Faced</th>
+                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Strike Rate</th>
+                            </tr>
+                `;
+
+                // Aggregate entries from registry tracking ledgers
+                const combinedBatsmen = { ...inn.batsmenRegistry };
+                if(inn.striker.name) combinedBatsmen[inn.striker.name] = { runs: inn.striker.runs, balls: inn.striker.balls };
+                if(inn.nonStriker.name) combinedBatsmen[inn.nonStriker.name] = { runs: inn.nonStriker.runs, balls: inn.nonStriker.balls };
+
+                Object.keys(combinedBatsmen).forEach(bName => {
+                    const b = combinedBatsmen[bName];
+                    const sr = b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : '0.0';
+                    htmlPayload += `
+                        <tr>
+                            <td style="padding:6px; border:1px solid #ccc;">${bName}</td>
+                            <td style="padding:6px; border:1px solid #ccc; text-align:center; font-weight:bold;">${b.runs}</td>
+                            <td style="padding:6px; border:1px solid #ccc; text-align:center;">${b.balls}</td>
+                            <td style="padding:6px; border:1px solid #ccc; text-align:center; color:#555;">${sr}</td>
+                        </tr>
+                    `;
+                });
+
+                htmlPayload += `
+                        </table>
+                        <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">🎯 Bowlers Analysis Spell Ledgers</h3>
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:13px;">
+                            <tr style="background:#f9f9f9; text-align:left;">
+                                <th style="padding:6px; border:1px solid #ccc;">Bowler Name</th>
+                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Overs Formatted</th>
+                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Runs Conceded</th>
+                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Wickets Claimed</th>
+                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Economy Rate</th>
+                            </tr>
+                `;
+
+                const combinedBowlers = { ...inn.bowlersRegistry };
+                if(inn.bowler.name) combinedBowlers[inn.bowler.name] = { runs: inn.bowler.runs, wickets: inn.bowler.wickets, balls: inn.bowler.balls };
+
+                Object.keys(combinedBowlers).forEach(bName => {
+                    const blr = combinedBowlers[bName];
+                    const bOvers = `${Math.floor(blr.balls / 6)}.${blr.balls % 6}`;
+                    const econ = blr.balls > 0 ? ((blr.runs * 6) / blr.balls).toFixed(2) : '0.00';
+                    htmlPayload += `
+                        <tr>
+                            <td style="padding:6px; border:1px solid #ccc;">${bName}</td>
+                            <td style="padding:6px; border:1px solid #ccc; text-align:center;">${bOvers}</td>
+                            <td style="padding:6px; border:1px solid #ccc; text-align:center;">${blr.runs}</td>
+                            <td style="padding:6px; border:1px solid #ccc; text-align:center; font-weight:bold; color:#e53935;">${blr.wickets}</td>
+                            <td style="padding:6px; border:1px solid #ccc; text-align:center; color:#555;">${econ}</td>
+                        </tr>
+                    `;
+                });
+
+                htmlPayload += `
+                        </table>
+                        <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">📈 Full Sequential Delivery Matrix Streams</h3>
+                        <div style="background:#f5f5f5; padding:8px; border-radius:4px; font-family:Courier, monospace; font-size:11px; line-height:1.6;">
+                `;
+
+                inn.oversHistory.forEach((oRow, oIdx) => {
+                    if(oRow.length > 0) {
+                        htmlPayload += `<strong>Over ${oIdx + 1}:</strong> [ ${oRow.join(' | ')} ]<br>`;
+                    }
+                });
+
+                htmlPayload += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            pDiv.innerHTML = htmlPayload;
+            
+            // Invoke compilation printing sequence configs parameters parameters loop profiles
+            const optionsSettings = {
+                margin: 10,
+                filename: 'LMP_Cricket_Match_ScoreBook_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().from(pDiv).set(optionsSettings).save();
+        });
+
+        // Initialize core screen workflows configurations loop instances
         syncConfigUI();
         renderScoreboard();
     </script>
