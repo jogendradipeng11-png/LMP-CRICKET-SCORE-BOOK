@@ -220,6 +220,9 @@
     </div>
 
     <script>
+        // Security Manager Password Config Configuration
+        const ACCESS_PASSWORD = "LMP@admin";
+
         // Initialize Firebase Realtime Database Connection Profiles Securely
         const firebaseConfig = {
             apiKey: "AIzaSyDNB9oNUc-h-V00tp1sfrNQ_AtIFYZEozc",
@@ -583,7 +586,8 @@
                 if(!inn.oversBowlers) inn.oversBowlers = [];
                 inn.oversBowlers.push(nextBowlerPrompt);
 
-                inn.bowler = loadPlayerStatsFromRegistry(inn, nextBowlerPrompt, 'bowler');
+                textPlayerDetails = loadPlayerStatsFromRegistry(inn, nextBowlerPrompt, 'bowler');
+                inn.bowler = textPlayerDetails;
                 els.inpBowler.value = nextBowlerPrompt;
             }
 
@@ -654,8 +658,14 @@
             syncConfigUI();
         });
 
-        // Safe Explicit On-Demand Cloud Save & Sync Handler Execution Context
+        // Safe Explicit On-Demand Cloud Save & Sync Handler Execution Context (Password Secured)
         els.btnCloudSave.addEventListener('click', () => {
+            const userPassword = prompt("Enter Password to Sync & Update Cloud Database:");
+            if (userPassword !== ACCESS_PASSWORD) {
+                alert("❌ Unauthorized access! Action aborted.");
+                return;
+            }
+
             els.btnCloudSave.disabled = true;
             els.btnCloudSave.textContent = "⌛ Syncing...";
             globalMatchRef.set(gameState)
@@ -682,7 +692,14 @@
             }
         });
 
+        // Protected Match Reset Function Logic (Password Secured)
         els.btnResetMatch.addEventListener('click', () => {
+            const userPassword = prompt("Enter Administration Password to Reset Match Ledger System:");
+            if (userPassword !== ACCESS_PASSWORD) {
+                alert("❌ Unauthorized access! Action aborted.");
+                return;
+            }
+
             if(confirm("Are you sure you want to completely clear local and shared live match histories?")) {
                 localStorage.removeItem('lmp_offline_scoreboard');
                 globalMatchRef.remove().then(() => {
@@ -693,7 +710,6 @@
 
         // Deep Analytical Export Engine Generator System using direct runtime string initialization
         els.btnExportPDF.addEventListener('click', () => {
-            // Generate clean standalone virtual document to isolate execution context completely from hidden styling filters
             const printElement = document.createElement('div');
             printElement.style.background = '#ffffff';
             printElement.style.color = '#000000';
@@ -817,7 +833,6 @@
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
-            // Generate clean document directly from virtual element tree references
             html2pdf().from(printElement).set(optionsSettings).save();
         });
 
