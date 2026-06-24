@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Updated viewport to permit mobile user pinch zoom modifications -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LMP Cricket Score Book - Offline Mobile</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,6 +26,20 @@
             border: 1px solid #1e2d44;
         }
         .card h3 { font-size: 14px; font-weight: 600; color: #8aa1c0; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #1e2d44; padding-bottom: 4px; }
+        
+        /* Match Result Card Banner CSS styles */
+        .result-banner {
+            display: none;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .result-banner.win { background: rgba(67, 160, 71, 0.2); border: 2px solid #43a047; color: #81c784; }
+        .result-banner.loss { background: rgba(229, 57, 53, 0.2); border: 2px solid #e53935; color: #ef5350; }
         
         /* Innings Header & Match Info */
         .match-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
@@ -94,6 +109,10 @@
     <div class="container">
         <h1>🏏 <span>LMP</span> Score Book</h1>
 
+        <!-- Result Banner Alert Window Box -->
+        <div id="matchResultBanner" class="result-banner"></div>
+
+        <!-- Live Scoreboard Card -->
         <div class="card">
             <div class="match-header">
                 <div class="teams-title" id="teamsDisplay">Team A vs Team B</div>
@@ -129,6 +148,7 @@
             </div>
         </div>
 
+        <!-- Ball-by-Ball Control Panel -->
         <div class="card">
             <h3>Ball Controls</h3>
             <div class="control-group">
@@ -139,7 +159,7 @@
                     <button class="runs" data-val="3">3</button>
                 </div>
                 <div class="btn-row">
-                    <button class="runs" data-val="4">4 </button>
+                    <button class="runs" data-val="4">4</button>
                     <button class="runs" data-val="6">6</button>
                     <button class="extra" id="btnWide">WD</button>
                     <button class="extra" id="btnNoBall">NB</button>
@@ -151,12 +171,13 @@
             </div>
         </div>
 
+        <!-- Over-by-Over Horizontal Matrix View -->
         <div class="card">
             <h3>📊 Match Grid Matrix</h3>
-            <div class="grid-scroll" id="matrixGrid">
-                </div>
+            <div class="grid-scroll" id="matrixGrid"></div>
         </div>
 
+        <!-- Innings & Game Setup Config -->
         <div class="card">
             <h3>⚙️ Innings & Match Manager</h3>
             
@@ -191,7 +212,7 @@
             <label>Current Over Bowler</label>
             <input id="inpBowler" value="Bowler 1">
 
-            <label>Total Match Overs</label>
+            <label>Total Match Overs (Applies to both Innings)</label>
             <input id="inpMaxOvers" type="number" value="20">
 
             <div class="btn-row" style="margin-top:12px;">
@@ -202,7 +223,6 @@
     </div>
 
     <script>
-        // State Layout Architecture for pure offline tracking
         let gameState = {
             maxOvers: 20,
             activeInnings: 'innings1',
@@ -212,8 +232,8 @@
                 striker: { name: 'Batsman 1', runs: 0, balls: 0 },
                 nonStriker: { name: 'Batsman 2', runs: 0, balls: 0 },
                 bowler: { name: 'Bowler 1', overs: 0, maidens: 0, runs: 0, wickets: 0, currentOverBalls: 0 },
-                oversHistory: [[]], // Matrix storage containing individual ball symbols
-                logHistory: [] // Deep copy state array snapshot for instant undos
+                oversHistory: [[]],
+                logHistory: []
             },
             innings2: {
                 battingTeam: 'Team B', bowlingTeam: 'Team A',
@@ -226,7 +246,6 @@
             }
         };
 
-        // Load or initialize state cache
         const localCache = localStorage.getItem('lmp_offline_scoreboard');
         if (localCache) {
             try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache parsing error, starting fresh"); }
@@ -236,7 +255,6 @@
             localStorage.setItem('lmp_offline_scoreboard', JSON.stringify(gameState));
         }
 
-        // DOM Object Hook binds
         const els = {
             teamsDisplay: document.getElementById('teamsDisplay'),
             inningsBadge: document.getElementById('inningsBadge'),
@@ -259,7 +277,8 @@
             inpBowler: document.getElementById('inpBowler'),
             inpMaxOvers: document.getElementById('inpMaxOvers'),
             btnApplySetup: document.getElementById('btnApplySetup'),
-            btnResetMatch: document.getElementById('btnResetMatch')
+            btnResetMatch: document.getElementById('btnResetMatch'),
+            matchResultBanner: document.getElementById('matchResultBanner')
         };
 
         function getActiveData() {
@@ -290,35 +309,70 @@
             return box;
         }
 
+        // Engine parsing utility to check total complete statuses 
+        function checkMatchStatus() {
+            const i1 = gameState.innings1;
+            const i2 = gameState.innings2;
+            const maxBalls = gameState.maxOvers * 6;
+
+            // Target condition parameters setup validation
+            if (i1.totalBalls === 0 && i1.runs === 0) {
+                els.matchResultBanner.style.display = 'none';
+                return;
+            }
+
+            const target = i1.runs + 1;
+            const isI2FinishedOrActive = i2.totalBalls > 0 || i2.wickets > 0 || gameState.activeInnings === 'innings2';
+            
+            if (isI2FinishedOrActive) {
+                // Scenario A: Innings 2 successfully tracked and passed score target
+                if (i2.runs >= target) {
+                    els.matchResultBanner.className = "result-banner win";
+                    els.matchResultBanner.innerHTML = `🎉 Congratulations to ${i2.battingTeam}! <br> You won the match by tracking down the target!`;
+                    els.matchResultBanner.style.display = 'block';
+                    return;
+                }
+                
+                // Scenario B: Innings 2 resource tracking elements exhausted (Balls or Wickets complete)
+                const i2BallsExhausted = i2.totalBalls >= maxBalls;
+                const i2WicketsExhausted = i2.wickets >= 10;
+                
+                if (i2BallsExhausted || i2WicketsExhausted) {
+                    if (i2.runs < i1.runs) {
+                        els.matchResultBanner.className = "result-banner loss";
+                        els.matchResultBanner.innerHTML = `😞 Sorry for your loss, ${i2.battingTeam}. <br> Try better for next time! ${i1.battingTeam} wins!`;
+                    } else if (i2.runs === i1.runs) {
+                        els.matchResultBanner.className = "result-banner win";
+                        els.matchResultBanner.innerHTML = `🤝 Match Tied! <br> Both teams finished with equal scores.`;
+                    }
+                    els.matchResultBanner.style.display = 'block';
+                    return;
+                }
+            }
+            els.matchResultBanner.style.display = 'none';
+        }
+
         function renderScoreboard() {
             const inn = getActiveData();
             
-            // Text Header Metrics
             els.teamsDisplay.textContent = `${inn.battingTeam} vs ${inn.bowlingTeam}`;
             els.inningsBadge.textContent = gameState.activeInnings === 'innings1' ? 'Innings 1' : 'Innings 2';
             els.scoreText.innerHTML = `${inn.runs}<span>/${inn.wickets}</span>`;
             
-            // Format Over Metric Notation calculation
             const normalOversText = `${Math.floor(inn.totalBalls / 6)}.${inn.totalBalls % 6}`;
             els.oversText.textContent = `Overs: ${normalOversText} / ${gameState.maxOvers}`;
             
-            // Run Rate computation
-            const baseRuns = inn.runs;
-            const computedRR = inn.totalBalls > 0 ? ((baseRuns * 6) / inn.totalBalls).toFixed(2) : "0.00";
+            const computedRR = inn.totalBalls > 0 ? ((inn.runs * 6) / inn.totalBalls).toFixed(2) : "0.00";
             els.rrText.textContent = `RR: ${computedRR}`;
 
-            // Batsmen Cards updates
             els.strikerName.textContent = `${inn.striker.name}*`;
             els.strikerStats.textContent = `${inn.striker.runs} (${inn.striker.balls})`;
             els.nonStrikerName.textContent = inn.nonStriker.name;
             els.nonStrikerStats.textContent = `${inn.nonStriker.runs} (${inn.nonStriker.balls})`;
             
-            // Bowler String parsing representation
-            const individualBowledOvers = `${Math.floor((inn.totalBalls - (inn.totalBalls % 6)) / 6)}.${inn.totalBalls % 6}`;
             els.bowlerName.textContent = inn.bowler.name;
             els.bowlerStats.textContent = `O: ${Math.floor(inn.totalBalls/6)}.${inn.totalBalls%6} | R: ${inn.bowler.runs} | W: ${inn.bowler.wickets}`;
 
-            // Render Current Active Over Row Elements
             els.recentBallsRow.innerHTML = '';
             const currentOverIdx = inn.oversHistory.length - 1;
             const currentOverArray = inn.oversHistory[currentOverIdx] || [];
@@ -326,7 +380,6 @@
                 els.recentBallsRow.appendChild(buildBallBadge(sym));
             });
 
-            // Render Full Horizontally Scrolled Grid Matrix View Layout
             els.matrixGrid.innerHTML = '';
             inn.oversHistory.forEach((overRow, idx) => {
                 const overDiv = document.createElement('div');
@@ -343,7 +396,6 @@
                     container.appendChild(buildBallBadge(sym));
                 });
                 
-                // Add empty placeholders if over incomplete
                 if (idx === currentOverIdx) {
                     let legalCount = overRow.filter(s => !s.includes('Wd') && !s.includes('Nb')).length;
                     for(let k = legalCount; k < 6; k++) {
@@ -359,8 +411,8 @@
                 els.matrixGrid.appendChild(overDiv);
             });
             
-            // Auto scroll matrix view to the extreme right
             els.matrixGrid.scrollLeft = els.matrixGrid.scrollWidth;
+            checkMatchStatus();
         }
 
         function captureStateSnapshot(inn) {
@@ -378,7 +430,6 @@
             captureStateSnapshot(inn);
 
             let symbol = runs.toString();
-            let isLegal = true;
 
             if (isWicket) {
                 symbol = 'W';
@@ -387,7 +438,6 @@
             }
 
             if (isExtra) {
-                isLegal = false;
                 if (extraType === 'WD') {
                     symbol = runs > 0 ? `${runs}Wd` : 'Wd';
                     inn.runs += (runs + 1);
@@ -400,7 +450,6 @@
                     inn.striker.balls += 1; 
                 }
             } else {
-                // Standard Legal Score execution pathway
                 inn.runs += runs;
                 inn.bowler.runs += runs;
                 inn.striker.runs += runs;
@@ -408,29 +457,23 @@
                 inn.totalBalls += 1;
             }
 
-            // Append recorded delivery structure into active over matrix
             let currentOverIdx = inn.oversHistory.length - 1;
             if (!inn.oversHistory[currentOverIdx]) inn.oversHistory[currentOverIdx] = [];
             inn.oversHistory[currentOverIdx].push(symbol);
 
-            // Handle run rotations logic sequence
             if (runs % 2 !== 0 && !isWicket && extraType !== 'WD') {
                 const temp = inn.striker;
                 inn.striker = inn.nonStriker;
                 inn.nonStriker = temp;
             }
 
-            // Check if standard over allocation limits met
             let currentOverRow = inn.oversHistory[currentOverIdx];
             let legalDeliveriesCount = currentOverRow.filter(s => !s.includes('Wd') && !s.includes('Nb')).length;
 
             if (legalDeliveriesCount >= 6) {
-                // Auto rotate strike positions at end of over sequence
                 const temp = inn.striker;
                 inn.striker = inn.nonStriker;
                 inn.nonStriker = temp;
-                
-                // Advance inside matrix storage arrays index map pointers
                 inn.oversHistory.push([]);
             }
 
@@ -445,7 +488,6 @@
             syncConfigUI();
         }
 
-        // Action Buttons Event Listeners Binding Maps
         document.querySelectorAll('button.runs').forEach(btn => {
             btn.addEventListener('click', () => {
                 const val = parseInt(btn.getAttribute('data-val'));
@@ -485,7 +527,10 @@
 
         els.btnApplySetup.addEventListener('click', () => {
             const inn = getActiveData();
+            
+            // Fixed Global Overs synchronization assignment rule logic
             gameState.maxOvers = parseInt(els.inpMaxOvers.value) || 20;
+            
             inn.battingTeam = els.inpBattingTeam.value.trim();
             inn.bowlingTeam = els.inpBowlingTeam.value.trim();
             inn.striker.name = els.inpStriker.value.trim();
@@ -494,7 +539,7 @@
             
             saveState();
             renderScoreboard();
-            alert("Settings applied!");
+            alert("Settings applied successfully!");
         });
 
         els.btnResetMatch.addEventListener('click', () => {
@@ -504,7 +549,6 @@
             }
         });
 
-        // Initialize display configuration workflows at setup
         syncConfigUI();
         renderScoreboard();
     </script>
