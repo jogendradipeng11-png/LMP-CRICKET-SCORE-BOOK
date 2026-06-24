@@ -216,8 +216,8 @@
         </div>
     </div>
 
-    <!-- Hidden Printing Container Module for neat clean reports layout formatting -->
-    <div id="pdfPrintContainer" style="display:none; background:#ffffff; color:#000000; padding:25px; font-family:Arial, sans-serif;"></div>
+    <!-- Hidden Printing Container Module via off-screen positioning mechanism to allow successful canvas renderings -->
+    <div id="pdfPrintContainer" style="position: absolute; left: -9999px; top: 0; width: 750px; background:#ffffff; color:#000000; padding:25px; font-family:Arial, sans-serif;"></div>
 
     <script>
         let gameState = {
