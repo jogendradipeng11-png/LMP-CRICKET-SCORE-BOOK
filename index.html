@@ -72,9 +72,9 @@
         button.wicket { background: #e53935; }
         
         .grid-scroll { overflow-x: auto; white-space: nowrap; padding-bottom: 4px; margin-top: 4px; }
-        .grid-over-row { display: inline-flex; flex-direction: column; margin-right: 8px; background: #0d1a2b; padding: 6px; border-radius: 8px; vertical-align: top; min-width: 110px; align-items: center;}
+        .grid-over-row { display: inline-flex; flex-direction: column; margin-right: 8px; background: #0d1a2b; padding: 6px; border-radius: 8px; vertical-align: top; min-width: 120px; align-items: center;}
         .grid-over-row.current-over { border: 1px solid #1e88e5; background: rgba(30, 136, 229, 0.05); }
-        .over-label { font-size: 11px; font-weight: 700; color: #8aa1c0; margin-bottom: 4px; text-transform: uppercase; text-align: center; white-space: normal; max-width: 105px; word-wrap: break-word; }
+        .over-label { font-size: 11px; font-weight: 700; color: #8aa1c0; margin-bottom: 4px; text-transform: uppercase; text-align: center; white-space: normal; max-width: 115px; word-wrap: break-word; }
         .balls-container { display: flex; gap: 3px; }
         .ball-box {
             width: 26px; height: 26px; border-radius: 50%; display: flex; justify-content: center; align-items: center;
@@ -229,7 +229,7 @@
     <div id="pdfPrintContainer" style="position: absolute; left: -9999px; top: 0; width: 750px; background:#ffffff; color:#000000; padding:25px; font-family:Arial, sans-serif;"></div>
 
     <script>
-        // Initialize Firebase Realtime Database Configuration
+        // Initialize Firebase Realtime Database Connection Profiles Securely
         const firebaseConfig = {
             apiKey: "AIzaSyDNB9oNUc-h-V00tp1sfrNQ_AtIFYZEozc",
             authDomain: "lmp-cricket-score-book.firebaseapp.com",
@@ -253,7 +253,7 @@
                 nonStriker: { name: 'Batsman 2', runs: 0, balls: 0 },
                 bowler: { name: 'Bowler 1', runs: 0, wickets: 0, balls: 0 },
                 oversHistory: [[]],
-                oversBowlers: ['Bowler 1'], // Tracks the bowler assigned to each specific over row index
+                oversBowlers: ['Bowler 1'], 
                 logHistory: [],
                 batsmenRegistry: {}, 
                 bowlersRegistry: {}
@@ -274,7 +274,7 @@
 
         const localCache = localStorage.getItem('lmp_offline_scoreboard');
         if (localCache) {
-            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache parsing error, resetting state data loop context"); }
+            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache memory reset structural fallback mismatch lookup"); }
         }
 
         function saveState() {
@@ -334,7 +334,6 @@
                 inn.bowler = loadPlayerStatsFromRegistry(inn, bName, 'bowler');
             }
 
-            // Sync structural memory layer for current active bowler row tracking data context
             let currentOverIdx = inn.oversHistory.length - 1;
             if(!inn.oversBowlers) inn.oversBowlers = [];
             inn.oversBowlers[currentOverIdx] = inn.bowler.name;
@@ -471,7 +470,6 @@
                 
                 const label = document.createElement('div');
                 label.className = 'over-label';
-                // Append bowler name configuration securely right to the structured analytical layout labels strings
                 const bNameForOver = (inn.oversBowlers && inn.oversBowlers[idx]) ? inn.oversBowlers[idx] : "Bowler";
                 label.textContent = `Ov ${idx + 1} (${bNameForOver})`;
                 overDiv.appendChild(label);
@@ -508,7 +506,7 @@
                 striker: { ...inn.striker }, nonStriker: { ...inn.nonStriker },
                 bowler: { ...inn.bowler }, oversHistory: JSON.parse(JSON.stringify(inn.oversHistory)),
                 oversBowlers: JSON.parse(JSON.stringify(inn.oversBowlers || [])),
-                logHistory: [], // Avoid deep cyclic history logging context
+                logHistory: [], 
                 batsmenRegistry: JSON.parse(JSON.stringify(inn.batsmenRegistry || {})),
                 bowlersRegistry: JSON.parse(JSON.stringify(inn.bowlersRegistry || {}))
             };
@@ -595,7 +593,7 @@
             renderScoreboard();
         }
 
-        // Live Input Observers Setup loops
+        // Live input field event tracking patterns
         [els.inpBattingTeam, els.inpBowlingTeam, els.inpStriker, els.inpNonStriker, els.inpBowler].forEach(element => {
             element.addEventListener('input', syncInputsToState);
         });
@@ -647,13 +645,13 @@
             syncConfigUI();
         });
 
-        // Trigger Cloud Sync Integration Functionality
+        // Safe Explicit On-Demand Cloud Save & Sync Handler Execution Context
         els.btnCloudSave.addEventListener('click', () => {
             els.btnCloudSave.disabled = true;
             els.btnCloudSave.textContent = "⌛ Syncing...";
             globalMatchRef.set(gameState)
                 .then(() => {
-                    alert("🎉 Live match sync successful! Everyone everywhere can now look at this progress stream.");
+                    alert("🎉 Live match sync successful! Open this dashboard elsewhere to see the progress.");
                 })
                 .catch(err => {
                     alert("Sync Error: " + err.message);
@@ -664,11 +662,12 @@
                 });
         });
 
-        // Real-time automatic listener pipeline downstreams update loops
-        globalMatchRef.on("value", (snapshot) => {
+        // Initialize from Cloud Database on clean entry layout instantiation
+        globalMatchRef.once("value").then((snapshot) => {
             const cloudData = snapshot.val();
             if (cloudData) {
                 gameState = cloudData;
+                saveState();
                 renderScoreboard();
                 syncConfigUI();
             }
@@ -806,7 +805,7 @@
             html2pdf().from(pDiv).set(optionsSettings).save();
         });
 
-        // Initialize core screen workflows configurations loop instances
+        // Initialize components seamlessly
         syncConfigUI();
         renderScoreboard();
     </script>
