@@ -119,6 +119,7 @@
                 <div class="math-details">
                     <div id="oversText">Overs: 0.0 / 20</div>
                     <div class="rr-text" id="rrText">RR: 0.00</div>
+                    <div id="targetText" style="font-size:12px; color:#fdd835; font-weight:bold; margin-top:2px; display:none;">Target: —</div>
                 </div>
             </div>
 
@@ -266,7 +267,7 @@
 
         const localCache = localStorage.getItem('lmp_offline_scoreboard');
         if (localCache) {
-            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache memory reset structural fallback mismatch lookup"); }
+            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache memory parse mismatch."); }
         }
 
         function saveState() {
@@ -279,6 +280,7 @@
             scoreText: document.getElementById('scoreText'),
             oversText: document.getElementById('oversText'),
             rrText: document.getElementById('rrText'),
+            targetText: document.getElementById('targetText'),
             strikerName: document.getElementById('strikerName'),
             strikerStats: document.getElementById('strikerStats'),
             nonStrikerName: document.getElementById('nonStrikerName'),
@@ -392,6 +394,13 @@
             const i2 = gameState.innings2;
             const maxBalls = gameState.maxOvers * 6;
 
+            if (gameState.activeInnings === 'innings2') {
+                els.targetText.style.display = 'block';
+                els.targetText.textContent = `Target: ${i1.runs + 1}`;
+            } else {
+                els.targetText.style.display = 'none';
+            }
+
             if (i1.totalBalls === 0 && i1.runs === 0) {
                 els.matchResultBanner.style.display = 'none';
                 return;
@@ -403,7 +412,7 @@
             if (isI2FinishedOrActive) {
                 if (i2.runs >= target) {
                     els.matchResultBanner.className = "result-banner win";
-                    els.matchResultBanner.innerHTML = `🎉 Congratulations to ${i2.battingTeam}! <br> You won the match by tracking down the target!`;
+                    els.matchResultBanner.innerHTML = `🎉 Congratulations to ${i2.battingTeam} for the win!`;
                     els.matchResultBanner.style.display = 'block';
                     return;
                 }
@@ -414,10 +423,10 @@
                 if (i2BallsExhausted || i2WicketsExhausted) {
                     if (i2.runs < i1.runs) {
                         els.matchResultBanner.className = "result-banner loss";
-                        els.matchResultBanner.innerHTML = `😞 Sorry for your loss, ${i2.battingTeam}. <br> Try better for next time! ${i1.battingTeam} wins!`;
+                        els.matchResultBanner.innerHTML = `😞 Better luck next time ${i2.battingTeam}! <br> Congratulations to ${i1.battingTeam} for the win!`;
                     } else if (i2.runs === i1.runs) {
                         els.matchResultBanner.className = "result-banner win";
-                        els.matchResultBanner.innerHTML = `🤝 Match Tied! <br> Both teams finished with equal scores.`;
+                        els.matchResultBanner.innerHTML = `🤝 Match Tied! Both teams finished with equal scores.`;
                     }
                     els.matchResultBanner.style.display = 'block';
                     return;
@@ -554,6 +563,15 @@
             let currentOverRow = inn.oversHistory[currentOverIdx];
             let legalDeliveriesCount = currentOverRow.filter(s => !s.includes('Wd') && !s.includes('Nb')).length;
 
+            if (isWicket) {
+                savePlayerStatsToRegistry(inn, 'striker'); 
+                const nextBatsmanPrompt = prompt("Wicket fell! Enter the next batsman name:", "New Batsman") || "New Batsman";
+                inn.striker.name = nextBatsmanPrompt;
+                inn.striker.runs = 0;
+                inn.striker.balls = 0;
+                els.inpStriker.value = nextBatsmanPrompt;
+            }
+
             if (legalDeliveriesCount >= 6) {
                 savePlayerStatsToRegistry(inn, 'bowler');
                 
@@ -562,19 +580,14 @@
                 inn.nonStriker = temp;
                 inn.oversHistory.push([]);
                 
+                // Prompt user for the next bowler's name explicitly at over finish loop
+                const nextBowlerPrompt = prompt("Over complete! Enter next bowler name to ball new bowling:", inn.bowler.name) || "New Bowler";
+                
                 if(!inn.oversBowlers) inn.oversBowlers = [];
-                inn.oversBowlers.push("New Bowler");
+                inn.oversBowlers.push(nextBowlerPrompt);
 
-                inn.bowler = { name: "New Bowler", runs: 0, wickets: 0, balls: 0 };
-                els.inpBowler.value = "New Bowler";
-            }
-
-            if (isWicket) {
-                savePlayerStatsToRegistry(inn, 'striker'); 
-                inn.striker.name = "New Batsman";
-                inn.striker.runs = 0;
-                inn.striker.balls = 0;
-                els.inpStriker.value = "New Batsman";
+                inn.bowler = loadPlayerStatsFromRegistry(inn, nextBowlerPrompt, 'bowler');
+                els.inpBowler.value = nextBowlerPrompt;
             }
 
             savePlayerStatsToRegistry(inn, 'striker');
@@ -631,7 +644,15 @@
         });
 
         els.selectInnings.addEventListener('change', (e) => {
-            gameState.activeInnings = e.target.value;
+            const targetInnings = e.target.value;
+            
+            // Automatic structural reversal mapping for Innings 2 setup configuration workflow
+            if (targetInnings === 'innings2') {
+                gameState.innings2.battingTeam = gameState.innings1.bowlingTeam;
+                gameState.innings2.bowlingTeam = gameState.innings1.battingTeam;
+            }
+            
+            gameState.activeInnings = targetInnings;
             saveState();
             renderScoreboard();
             syncConfigUI();
@@ -674,7 +695,7 @@
             }
         });
 
-        // Deep Analytical Export Engine Generator System
+        // Deep Analytical Export Engine Generator System with explicit clean page sorting breaks rules
         els.btnExportPDF.addEventListener('click', () => {
             const pDiv = document.getElementById('pdfPrintContainer');
             
@@ -689,9 +710,11 @@
             ['innings1', 'innings2'].forEach((innKey, index) => {
                 const inn = gameState[innKey];
                 const oversLabel = `${Math.floor(inn.totalBalls / 6)}.${inn.totalBalls % 6}`;
+                // Set explicit target pagination rules so that each innings displays natively on a brand new page
+                const breakStyleRule = index > 0 ? 'page-break-before: always; padding-top:20px;' : '';
                 
                 htmlPayload += `
-                    <div style="margin-bottom:30px; color:#000000;">
+                    <div style="margin-bottom:30px; color:#000000; ${breakStyleRule}">
                         <h2 style="background:#0b1726; color:#ffffff; padding:8px 12px; font-size:16px; border-radius:4px; margin-bottom:10px;">
                             Innings ${index + 1}: ${inn.battingTeam} Batting Performance Ledger
                         </h2>
@@ -768,7 +791,7 @@
 
                 htmlPayload += `
                         </table>
-                        <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">📈 Full Sequential Delivery Matrix Streams</h3>
+                        <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">🎯 Full Sequential Delivery Matrix Streams</h3>
                         <div style="background:#f9f9f9; padding:12px; border:1px solid #ccc; border-radius:4px; font-family:monospace; font-size:12px; line-height:1.6; color:#000000;">
                 `;
 
@@ -797,11 +820,11 @@
             };
             
             html2pdf().from(pDiv).set(optionsSettings).save().then(() => {
-                pDiv.innerHTML = ""; // clear printing layout cache securely
+                pDiv.innerHTML = ""; 
             });
         });
 
-        // Initialize components seamlessly
+        // Initialize core workflow profiles components seamlessly
         syncConfigUI();
         renderScoreboard();
     </script>
