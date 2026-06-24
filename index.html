@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport configured to fully permit native mobile user pinch-to-zoom scaling -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>LMP Cricket Score Book - Offline Mobile</title>
     <style>
@@ -99,7 +98,6 @@
         
         .score-area-inputs { margin-top: 10px; padding-top: 6px; border-top: 1px dashed #1e2d44; }
     </style>
-    <!-- Embedded libraries for PDF generation and Cloud DB Sync -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -110,7 +108,6 @@
 
         <div id="matchResultBanner" class="result-banner"></div>
 
-        <!-- Live Scoreboard Card -->
         <div class="card">
             <div class="match-header">
                 <div class="teams-title" id="teamsDisplay">Team A vs Team B</div>
@@ -140,7 +137,6 @@
                 </div>
             </div>
 
-            <!-- In-Place Score Area Personnel Settings -->
             <div class="score-area-inputs">
                 <div class="flex-equal">
                     <div>
@@ -164,7 +160,6 @@
             </div>
         </div>
 
-        <!-- Ball-by-Ball Control Panel -->
         <div class="card">
             <h3>Ball Controls</h3>
             <div class="control-group">
@@ -187,13 +182,11 @@
             </div>
         </div>
 
-        <!-- Over-by-Over Horizontal Matrix View -->
         <div class="card">
             <h3>📊 Match Grid Matrix</h3>
             <div class="grid-scroll" id="matrixGrid"></div>
         </div>
 
-        <!-- Innings & Game Setup Config -->
         <div class="card">
             <h3>⚙️ Innings & Match Manager</h3>
             
@@ -225,8 +218,7 @@
         </div>
     </div>
 
-    <!-- Hidden Printing Container Module via off-screen positioning mechanism to allow successful canvas renderings -->
-    <div id="pdfPrintContainer" style="position: absolute; left: -9999px; top: 0; width: 750px; background:#ffffff; color:#000000; padding:25px; font-family:Arial, sans-serif;"></div>
+    <div id="pdfPrintContainer" style="position: absolute; top: 0; left: 0; width: 750px; height: 0; overflow: hidden; background:#ffffff; font-family:Arial, sans-serif;"></div>
 
     <script>
         // Initialize Firebase Realtime Database Connection Profiles Securely
@@ -687,10 +679,11 @@
             const pDiv = document.getElementById('pdfPrintContainer');
             
             let htmlPayload = `
-                <div style="text-align:center; border-bottom:3px solid #1e88e5; padding-bottom:10px; margin-bottom:20px;">
-                    <h1 style="color:#111; margin:0; font-size:26px;">🏏 LMP Cricket Score Book Report</h1>
-                    <p style="color:#555; margin:5px 0 0 0; font-size:12px;">Generated Offline • Max Match Overs: ${gameState.maxOvers}</p>
-                </div>
+                <div style="background:#ffffff; color:#000000; padding:25px; min-height:842px;">
+                    <div style="text-align:center; border-bottom:3px solid #1e88e5; padding-bottom:10px; margin-bottom:20px;">
+                        <h1 style="color:#000000; margin:0; font-size:26px;">LMP Cricket Score Book Report</h1>
+                        <p style="color:#444444; margin:5px 0 0 0; font-size:12px;">Generated Offline • Max Match Overs: ${gameState.maxOvers}</p>
+                    </div>
             `;
 
             ['innings1', 'innings2'].forEach((innKey, index) => {
@@ -698,30 +691,30 @@
                 const oversLabel = `${Math.floor(inn.totalBalls / 6)}.${inn.totalBalls % 6}`;
                 
                 htmlPayload += `
-                    <div style="margin-bottom:30px; page-break-inside:avoid;">
-                        <h2 style="background:#0b1726; color:#fff; padding:6px 12px; font-size:16px; border-radius:4px; margin-bottom:10px;">
+                    <div style="margin-bottom:30px; color:#000000;">
+                        <h2 style="background:#0b1726; color:#ffffff; padding:8px 12px; font-size:16px; border-radius:4px; margin-bottom:10px;">
                             Innings ${index + 1}: ${inn.battingTeam} Batting Performance Ledger
                         </h2>
-                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:14px;">
-                            <tr style="background:#f5f5f5; text-align:left;">
-                                <th style="padding:6px; border:1px solid #ccc;">Summary Metric Score</th>
-                                <th style="padding:6px; border:1px solid #ccc;">Overs Bowled</th>
-                                <th style="padding:6px; border:1px solid #ccc;">Current Run Rate</th>
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:14px; color:#000000;">
+                            <tr style="background:#f5f5f5; text-align:left; color:#000000;">
+                                <th style="padding:8px; border:1px solid #ccc; color:#000000;">Summary Metric Score</th>
+                                <th style="padding:8px; border:1px solid #ccc; color:#000000;">Overs Bowled</th>
+                                <th style="padding:8px; border:1px solid #ccc; color:#000000;">Current Run Rate</th>
                             </tr>
-                            <tr>
-                                <td style="padding:6px; border:1px solid #ccc; font-weight:bold;">${inn.runs} / ${inn.wickets}</td>
-                                <td style="padding:6px; border:1px solid #ccc;">${oversLabel} / ${gameState.maxOvers}</td>
-                                <td style="padding:6px; border:1px solid #ccc;">${inn.totalBalls > 0 ? ((inn.runs * 6) / inn.totalBalls).toFixed(2) : '0.00'}</td>
+                            <tr style="color:#000000;">
+                                <td style="padding:8px; border:1px solid #ccc; font-weight:bold; color:#000000;">${inn.runs} / ${inn.wickets}</td>
+                                <td style="padding:8px; border:1px solid #ccc; color:#000000;">${oversLabel} / ${gameState.maxOvers}</td>
+                                <td style="padding:8px; border:1px solid #ccc; color:#000000;">${inn.totalBalls > 0 ? ((inn.runs * 6) / inn.totalBalls).toFixed(2) : '0.00'}</td>
                             </tr>
                         </table>
 
                         <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">🏏 Batsmen Batting Ledger Breakdowns</h3>
-                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:13px;">
-                            <tr style="background:#f9f9f9; text-align:left;">
-                                <th style="padding:6px; border:1px solid #ccc;">Batsman Profile Designation Name</th>
-                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Total Runs Secured</th>
-                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Legal Deliveries Faced</th>
-                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Strike Rate</th>
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:13px; color:#000000;">
+                            <tr style="background:#f9f9f9; text-align:left; color:#000000;">
+                                <th style="padding:8px; border:1px solid #ccc; color:#000000;">Batsman Profile Designation Name</th>
+                                <th style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">Total Runs Secured</th>
+                                <th style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">Legal Deliveries Faced</th>
+                                <th style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">Strike Rate</th>
                             </tr>
                 `;
 
@@ -733,11 +726,11 @@
                     const b = combinedBatsmen[bName];
                     const sr = b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : '0.0';
                     htmlPayload += `
-                        <tr>
-                            <td style="padding:6px; border:1px solid #ccc;">${bName}</td>
-                            <td style="padding:6px; border:1px solid #ccc; text-align:center; font-weight:bold;">${b.runs}</td>
-                            <td style="padding:6px; border:1px solid #ccc; text-align:center;">${b.balls}</td>
-                            <td style="padding:6px; border:1px solid #ccc; text-align:center; color:#555;">${sr}</td>
+                        <tr style="color:#000000;">
+                            <td style="padding:8px; border:1px solid #ccc; color:#000000;">${bName}</td>
+                            <td style="padding:8px; border:1px solid #ccc; text-align:center; font-weight:bold; color:#000000;">${b.runs}</td>
+                            <td style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">${b.balls}</td>
+                            <td style="padding:8px; border:1px solid #ccc; text-align:center; color:#444444;">${sr}</td>
                         </tr>
                     `;
                 });
@@ -745,13 +738,13 @@
                 htmlPayload += `
                         </table>
                         <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">🎯 Bowlers Analysis Spell Ledgers</h3>
-                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:13px;">
-                            <tr style="background:#f9f9f9; text-align:left;">
-                                <th style="padding:6px; border:1px solid #ccc;">Bowler Name</th>
-                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Overs Formatted</th>
-                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Runs Conceded</th>
-                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Wickets Claimed</th>
-                                <th style="padding:6px; border:1px solid #ccc; text-align:center;">Economy Rate</th>
+                        <table style="width:100%; border-collapse:collapse; margin-bottom:12px; font-size:13px; color:#000000;">
+                            <tr style="background:#f9f9f9; text-align:left; color:#000000;">
+                                <th style="padding:8px; border:1px solid #ccc; color:#000000;">Bowler Name</th>
+                                <th style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">Overs Formatted</th>
+                                <th style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">Runs Conceded</th>
+                                <th style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">Wickets Claimed</th>
+                                <th style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">Economy Rate</th>
                             </tr>
                 `;
 
@@ -763,26 +756,26 @@
                     const bOvers = `${Math.floor(blr.balls / 6)}.${blr.balls % 6}`;
                     const econ = blr.balls > 0 ? ((blr.runs * 6) / blr.balls).toFixed(2) : '0.00';
                     htmlPayload += `
-                        <tr>
-                            <td style="padding:6px; border:1px solid #ccc;">${bName}</td>
-                            <td style="padding:6px; border:1px solid #ccc; text-align:center;">${bOvers}</td>
-                            <td style="padding:6px; border:1px solid #ccc; text-align:center;">${blr.runs}</td>
-                            <td style="padding:6px; border:1px solid #ccc; text-align:center; font-weight:bold; color:#e53935;">${blr.wickets}</td>
-                            <td style="padding:6px; border:1px solid #ccc; text-align:center; color:#555;">${econ}</td>
+                        <tr style="color:#000000;">
+                            <td style="padding:8px; border:1px solid #ccc; color:#000000;">${bName}</td>
+                            <td style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">${bOvers}</td>
+                            <td style="padding:8px; border:1px solid #ccc; text-align:center; color:#000000;">${blr.runs}</td>
+                            <td style="padding:8px; border:1px solid #ccc; text-align:center; font-weight:bold; color:#e53935;">${blr.wickets}</td>
+                            <td style="padding:8px; border:1px solid #ccc; text-align:center; color:#444444;">${econ}</td>
                         </tr>
                     `;
                 });
 
                 htmlPayload += `
                         </table>
-                        <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">🎯 Full Sequential Delivery Matrix Streams</h3>
-                        <div style="background:#f5f5f5; padding:8px; border-radius:4px; font-family:Courier, monospace; font-size:11px; line-height:1.6;">
+                        <h3 style="font-size:13px; color:#1e88e5; margin-bottom:6px;">📈 Full Sequential Delivery Matrix Streams</h3>
+                        <div style="background:#f9f9f9; padding:12px; border:1px solid #ccc; border-radius:4px; font-family:monospace; font-size:12px; line-height:1.6; color:#000000;">
                 `;
 
                 inn.oversHistory.forEach((oRow, oIdx) => {
                     if(oRow.length > 0) {
                         const bName = (inn.oversBowlers && inn.oversBowlers[oIdx]) ? inn.oversBowlers[oIdx] : "Bowler";
-                        htmlPayload += `<strong>Over ${oIdx + 1} (${bName}):</strong> [ ${oRow.join(' | ')} ]<br>`;
+                        htmlPayload += `<div style="color:#000000; margin-bottom:4px;"><strong>Over ${oIdx + 1} (${bName}):</strong> [ ${oRow.join(' | ')} ]</div>`;
                     }
                 });
 
@@ -792,17 +785,20 @@
                 `;
             });
 
+            htmlPayload += `</div>`;
             pDiv.innerHTML = htmlPayload;
             
             const optionsSettings = {
                 margin: 10,
                 filename: 'LMP_Cricket_Match_ScoreBook_Report.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
             
-            html2pdf().from(pDiv).set(optionsSettings).save();
+            html2pdf().from(pDiv).set(optionsSettings).save().then(() => {
+                pDiv.innerHTML = ""; // clear printing layout cache securely
+            });
         });
 
         // Initialize components seamlessly
