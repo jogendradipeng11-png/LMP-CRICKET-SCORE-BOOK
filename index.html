@@ -220,10 +220,9 @@
     </div>
 
     <script>
-        // Security Manager Password Config Configuration
         const ACCESS_PASSWORD = "LMP@admin";
+        let isInternalSync = false;
 
-        // Initialize Firebase Realtime Database Connection Profiles Securely
         const firebaseConfig = {
             apiKey: "AIzaSyDNB9oNUc-h-V00tp1sfrNQ_AtIFYZEozc",
             authDomain: "lmp-cricket-score-book.firebaseapp.com",
@@ -308,6 +307,7 @@
         }
 
         function syncInputsToState() {
+            if (isInternalSync) return;
             const inn = getActiveData();
             inn.battingTeam = els.inpBattingTeam.value.trim() || 'Team A';
             inn.bowlingTeam = els.inpBowlingTeam.value.trim() || 'Team B';
@@ -367,6 +367,7 @@
         }
 
         function syncConfigUI() {
+            isInternalSync = true;
             const inn = getActiveData();
             els.selectInnings.value = gameState.activeInnings;
             els.inpBattingTeam.value = inn.battingTeam;
@@ -375,6 +376,7 @@
             els.inpNonStriker.value = inn.nonStriker.name;
             els.inpBowler.value = inn.bowler.name;
             els.inpMaxOvers.value = gameState.maxOvers;
+            isInternalSync = false;
         }
 
         function buildBallBadge(symbol) {
@@ -384,7 +386,7 @@
             else if (['1','2','3'].includes(symbol)) box.classList.add('run');
             else if (symbol === '4') box.classList.add('four');
             else if (symbol === '6') box.classList.add('six');
-            else if (symbol.includes('W') && !symbol.includes('Wd')) box.classList.add('wicket');
+            else if (symbol.includes('W') && !symbol.includes('Wd') && !symbol.includes('Nb')) box.classList.add('wicket');
             else box.classList.add('extra');
             box.textContent = symbol;
             return box;
@@ -525,6 +527,9 @@
                 symbol = 'W';
                 inn.wickets += 1;
                 inn.bowler.wickets += 1;
+                inn.striker.balls += 1;
+                inn.totalBalls += 1;
+                inn.bowler.balls += 1;
             }
 
             if (isExtra) {
@@ -539,7 +544,7 @@
                     inn.striker.runs += runs; 
                     inn.striker.balls += 1; 
                 }
-            } else {
+            } else if (!isWicket) {
                 inn.runs += runs;
                 inn.bowler.runs += runs;
                 inn.striker.runs += runs;
@@ -555,7 +560,7 @@
             if (!inn.oversBowlers) inn.oversBowlers = [];
             inn.oversBowlers[currentOverIdx] = inn.bowler.name;
 
-            if (runs % 2 !== 0 && !isWicket && extraType !== 'WD') {
+            if (runs % 2 !== 0 && extraType !== 'WD') {
                 const temp = inn.striker;
                 inn.striker = inn.nonStriker;
                 inn.nonStriker = temp;
@@ -567,10 +572,7 @@
             if (isWicket) {
                 savePlayerStatsToRegistry(inn, 'striker'); 
                 const nextBatsmanPrompt = prompt("Wicket fell! Enter the next batsman name:", "New Batsman") || "New Batsman";
-                inn.striker.name = nextBatsmanPrompt;
-                inn.striker.runs = 0;
-                inn.striker.balls = 0;
-                els.inpStriker.value = nextBatsmanPrompt;
+                inn.striker = { name: nextBatsmanPrompt, runs: 0, balls: 0 };
             }
 
             if (legalDeliveriesCount >= 6) {
@@ -581,14 +583,12 @@
                 inn.nonStriker = temp;
                 inn.oversHistory.push([]);
                 
-                const nextBowlerPrompt = prompt("Over complete! Enter next bowler name to ball new bowling:", inn.bowler.name) || "New Bowler";
+                const nextBowlerPrompt = prompt("Over complete! Enter next bowler name:", inn.bowler.name) || "New Bowler";
                 
                 if(!inn.oversBowlers) inn.oversBowlers = [];
                 inn.oversBowlers.push(nextBowlerPrompt);
 
-                textPlayerDetails = loadPlayerStatsFromRegistry(inn, nextBowlerPrompt, 'bowler');
-                inn.bowler = textPlayerDetails;
-                els.inpBowler.value = nextBowlerPrompt;
+                inn.bowler = loadPlayerStatsFromRegistry(inn, nextBowlerPrompt, 'bowler');
             }
 
             savePlayerStatsToRegistry(inn, 'striker');
@@ -596,10 +596,10 @@
             savePlayerStatsToRegistry(inn, 'bowler');
 
             saveState();
+            syncConfigUI();
             renderScoreboard();
         }
 
-        // Live input field event tracking patterns
         [els.inpBattingTeam, els.inpBowlingTeam, els.inpStriker, els.inpNonStriker, els.inpBowler].forEach(element => {
             element.addEventListener('input', syncInputsToState);
         });
@@ -637,8 +637,8 @@
                 inn.bowlersRegistry = previous.bowlersRegistry || {};
                 
                 saveState();
-                renderScoreboard();
                 syncConfigUI();
+                renderScoreboard();
             } else {
                 alert("Nothing left to undo!");
             }
@@ -654,11 +654,10 @@
             
             gameState.activeInnings = targetInnings;
             saveState();
-            renderScoreboard();
             syncConfigUI();
+            renderScoreboard();
         });
 
-        // Safe Explicit On-Demand Cloud Save & Sync Handler Execution Context (Password Secured)
         els.btnCloudSave.addEventListener('click', () => {
             const userPassword = prompt("Enter Password to Sync & Update Cloud Database:");
             if (userPassword !== ACCESS_PASSWORD) {
@@ -670,7 +669,7 @@
             els.btnCloudSave.textContent = "⌛ Syncing...";
             globalMatchRef.set(gameState)
                 .then(() => {
-                    alert("🎉 Live match sync successful! Open this dashboard elsewhere to see the progress.");
+                    alert("🎉 Live match sync successful!");
                 })
                 .catch(err => {
                     alert("Sync Error: " + err.message);
@@ -681,18 +680,16 @@
                 });
         });
 
-        // Initialize from Cloud Database on clean entry layout instantiation
         globalMatchRef.once("value").then((snapshot) => {
             const cloudData = snapshot.val();
             if (cloudData) {
                 gameState = cloudData;
                 saveState();
-                renderScoreboard();
                 syncConfigUI();
+                renderScoreboard();
             }
         });
 
-        // Protected Match Reset Function Logic (Password Secured)
         els.btnResetMatch.addEventListener('click', () => {
             const userPassword = prompt("Enter Administration Password to Reset Match Ledger System:");
             if (userPassword !== ACCESS_PASSWORD) {
@@ -708,7 +705,6 @@
             }
         });
 
-        // Deep Analytical Export Engine Generator System using direct runtime string initialization
         els.btnExportPDF.addEventListener('click', () => {
             const printElement = document.createElement('div');
             printElement.style.background = '#ffffff';
@@ -836,7 +832,6 @@
             html2pdf().from(printElement).set(optionsSettings).save();
         });
 
-        // Initialize core components seamlessly
         syncConfigUI();
         renderScoreboard();
     </script>
