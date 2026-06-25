@@ -504,8 +504,10 @@
             if (!inn.logHistory) inn.logHistory = [];
             const clone = {
                 runs: inn.runs, wickets: inn.wickets, totalBalls: inn.totalBalls,
-                striker: { ...inn.striker }, nonStriker: { ...inn.nonStriker },
-                bowler: { ...inn.bowler }, oversHistory: JSON.parse(JSON.stringify(inn.oversHistory)),
+                striker: JSON.parse(JSON.stringify(inn.striker)), 
+                nonStriker: JSON.parse(JSON.stringify(inn.nonStriker)),
+                bowler: JSON.parse(JSON.stringify(inn.bowler)), 
+                oversHistory: JSON.parse(JSON.stringify(inn.oversHistory)),
                 oversBowlers: JSON.parse(JSON.stringify(inn.oversBowlers || [])),
                 logHistory: [], 
                 batsmenRegistry: JSON.parse(JSON.stringify(inn.batsmenRegistry || {})),
@@ -566,22 +568,21 @@
             if (isWicket) {
                 savePlayerStatsToRegistry(inn, 'striker'); 
                 const nextBatsmanPrompt = prompt("Wicket fell! Enter the next batsman name:", "New Batsman") || "New Batsman";
-                inn.striker.name = nextBatsmanPrompt;
-                inn.striker.runs = 0;
-                inn.striker.balls = 0;
+                inn.striker = { name: nextBatsmanPrompt, runs: 0, balls: 0 };
                 els.inpStriker.value = nextBatsmanPrompt;
             }
 
             if (legalDeliveriesCount >= 6) {
                 savePlayerStatsToRegistry(inn, 'bowler');
+                savePlayerStatsToRegistry(inn, 'striker');
+                savePlayerStatsToRegistry(inn, 'nonStriker');
                 
                 const temp = inn.striker;
                 inn.striker = inn.nonStriker;
                 inn.nonStriker = temp;
                 inn.oversHistory.push([]);
                 
-                // Prompt user for the next bowler's name explicitly at over finish loop
-                const nextBowlerPrompt = prompt("Over complete! Enter next bowler name to ball new bowling:", inn.bowler.name) || "New Bowler";
+                const nextBowlerPrompt = prompt("Over complete! Enter next bowler name:", inn.bowler.name) || "New Bowler";
                 
                 if(!inn.oversBowlers) inn.oversBowlers = [];
                 inn.oversBowlers.push(nextBowlerPrompt);
@@ -596,11 +597,12 @@
 
             saveState();
             renderScoreboard();
+            syncConfigUI();
         }
 
-        // Live input field event tracking patterns
+        // Changed from 'input' to 'change' to prevent state loss mid-type layout adjustments
         [els.inpBattingTeam, els.inpBowlingTeam, els.inpStriker, els.inpNonStriker, els.inpBowler].forEach(element => {
-            element.addEventListener('input', syncInputsToState);
+            element.addEventListener('change', syncInputsToState);
         });
 
         els.inpMaxOvers.addEventListener('input', () => {
@@ -646,7 +648,6 @@
         els.selectInnings.addEventListener('change', (e) => {
             const targetInnings = e.target.value;
             
-            // Automatic structural reversal mapping for Innings 2 setup configuration workflow
             if (targetInnings === 'innings2') {
                 gameState.innings2.battingTeam = gameState.innings1.bowlingTeam;
                 gameState.innings2.bowlingTeam = gameState.innings1.battingTeam;
@@ -658,13 +659,12 @@
             syncConfigUI();
         });
 
-        // Safe Explicit On-Demand Cloud Save & Sync Handler Execution Context
         els.btnCloudSave.addEventListener('click', () => {
             els.btnCloudSave.disabled = true;
             els.btnCloudSave.textContent = "⌛ Syncing...";
             globalMatchRef.set(gameState)
                 .then(() => {
-                    alert("🎉 Live match sync successful! Open this dashboard elsewhere to see the progress.");
+                    alert("🎉 Live match sync successful!");
                 })
                 .catch(err => {
                     alert("Sync Error: " + err.message);
@@ -675,7 +675,6 @@
                 });
         });
 
-        // Initialize from Cloud Database on clean entry layout instantiation
         globalMatchRef.once("value").then((snapshot) => {
             const cloudData = snapshot.val();
             if (cloudData) {
@@ -695,7 +694,6 @@
             }
         });
 
-        // Deep Analytical Export Engine Generator System with explicit clean page sorting breaks rules
         els.btnExportPDF.addEventListener('click', () => {
             const pDiv = document.getElementById('pdfPrintContainer');
             
@@ -710,7 +708,6 @@
             ['innings1', 'innings2'].forEach((innKey, index) => {
                 const inn = gameState[innKey];
                 const oversLabel = `${Math.floor(inn.totalBalls / 6)}.${inn.totalBalls % 6}`;
-                // Set explicit target pagination rules so that each innings displays natively on a brand new page
                 const breakStyleRule = index > 0 ? 'page-break-before: always; padding-top:20px;' : '';
                 
                 htmlPayload += `
@@ -824,7 +821,7 @@
             });
         });
 
-        // Initialize core workflow profiles components seamlessly
+        // Initialize UI values on layout instantiation
         syncConfigUI();
         renderScoreboard();
     </script>
