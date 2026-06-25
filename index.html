@@ -569,7 +569,7 @@
             let currentOverRow = inn.oversHistory[currentOverIdx];
             let legalDeliveriesCount = currentOverRow.filter(s => !s.includes('Wd') && !s.includes('Nb')).length;
 
-            if (isWicket) {
+            if (isWicket && inn.wickets < 10) {
                 savePlayerStatsToRegistry(inn, 'striker'); 
                 const nextBatsmanPrompt = prompt("Wicket fell! Enter the next batsman name:", "New Batsman") || "New Batsman";
                 inn.striker = { name: nextBatsmanPrompt, runs: 0, balls: 0 };
