@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>LMP Cricket Score Book - Offline Mobile</title>
+    <title>LMP Cricket Score Book - Offline + Online</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -16,26 +16,10 @@
         h1 { text-align: center; font-size: 20px; font-weight: 400; margin-bottom: 12px; letter-spacing: 0.5px; }
         h1 span { color: #fdd835; font-weight: 700; }
        
-        .card {
-            background: #111c2e;
-            padding: 14px;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            border: 1px solid #1e2d44;
-        }
+        .card { background: #111c2e; padding: 14px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: 1px solid #1e2d44; }
         .card h3 { font-size: 14px; font-weight: 600; color: #8aa1c0; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #1e2d44; padding-bottom: 4px; }
        
-        .result-banner {
-            display: none;
-            padding: 12px;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 700;
-            font-size: 15px;
-            margin-bottom: 12px;
-            line-height: 1.4;
-        }
+        .result-banner { display: none; padding: 12px; border-radius: 8px; text-align: center; font-weight: 700; font-size: 15px; margin-bottom: 12px; line-height: 1.4; }
         .result-banner.win { background: rgba(67, 160, 71, 0.2); border: 2px solid #43a047; color: #81c784; }
         .result-banner.loss { background: rgba(229, 57, 53, 0.2); border: 2px solid #e53935; color: #ef5350; }
        
@@ -117,18 +101,9 @@
             </div>
 
             <div class="live-stats">
-                <div class="stat-line active" id="strikerBox">
-                    <p id="strikerName">Striker*</p>
-                    <span id="strikerStats">0 (0)</span>
-                </div>
-                <div class="stat-line" id="nonStrikerBox">
-                    <p id="nonStrikerName">Non-Striker</p>
-                    <span id="nonStrikerStats">0 (0)</span>
-                </div>
-                <div class="stat-line" style="grid-column: span 2;" id="bowlerBox">
-                    <p id="bowlerName">Bowler</p>
-                    <span id="bowlerStats">O: 0.0 | R: 0 | W: 0</span>
-                </div>
+                <div class="stat-line active" id="strikerBox"><p id="strikerName">Striker*</p><span id="strikerStats">0 (0)</span></div>
+                <div class="stat-line" id="nonStrikerBox"><p id="nonStrikerName">Non-Striker</p><span id="nonStrikerStats">0 (0)</span></div>
+                <div class="stat-line" style="grid-column: span 2;" id="bowlerBox"><p id="bowlerName">Bowler</p><span id="bowlerStats">O: 0.0 | R: 0 | W: 0</span></div>
             </div>
 
             <div class="score-area-inputs">
@@ -196,7 +171,21 @@
     <div id="pdfPrintContainer" style="position:absolute;top:0;left:0;width:750px;height:0;overflow:hidden;background:#ffffff;"></div>
 
     <script>
-        // ====================== SAFE STORAGE ======================
+        // ====================== CONFIG ======================
+        const firebaseConfig = {
+            apiKey: "AIzaSyDNB9oNUc-h-V00tp1sfrNQ_AtIFYZEozc",
+            authDomain: "lmp-cricket-score-book.firebaseapp.com",
+            databaseURL: "https://lmp-cricket-score-book-default-rtdb.firebaseio.com",
+            projectId: "lmp-cricket-score-book",
+            storageBucket: "lmp-cricket-score-book.firebasestorage.app",
+            messagingSenderId: "876981656549",
+            appId: "1:876981656549:web:3be8e39c4c4f835dfead0c"
+        };
+
+        let db, globalMatchRef;
+        let isOnline = navigator.onLine;
+
+        // Safe Storage
         let gameState = {
             maxOvers: 20,
             activeInnings: 'innings1',
@@ -212,24 +201,15 @@
                 oversHistory: [[]], oversBowlers: ['Bowler 1'] }
         };
 
-        // Memory fallback
-        let memoryStorage = {};
-
         function loadState() {
             try {
                 const saved = localStorage.getItem('lmp_offline_scoreboard');
                 if (saved) gameState = JSON.parse(saved);
-            } catch(e) {
-                if (memoryStorage.savedState) gameState = JSON.parse(memoryStorage.savedState);
-            }
+            } catch(e) {}
         }
 
         function saveState() {
-            try {
-                localStorage.setItem('lmp_offline_scoreboard', JSON.stringify(gameState));
-            } catch(e) {
-                memoryStorage.savedState = JSON.stringify(gameState);
-            }
+            try { localStorage.setItem('lmp_offline_scoreboard', JSON.stringify(gameState)); } catch(e) {}
         }
 
         // Elements
@@ -260,16 +240,13 @@
             btnResetMatch: document.getElementById('btnResetMatch')
         };
 
-        function getActiveData() {
-            return gameState[gameState.activeInnings];
-        }
+        function getActiveData() { return gameState[gameState.activeInnings]; }
 
         function renderScoreboard() {
             const inn = getActiveData();
             els.teamsDisplay.textContent = `${inn.battingTeam} vs ${inn.bowlingTeam}`;
             els.inningsBadge.textContent = gameState.activeInnings === 'innings1' ? 'Innings 1' : 'Innings 2';
             els.scoreText.innerHTML = `${inn.runs}<span>/${inn.wickets}</span>`;
-            
             const overs = (Math.floor(inn.totalBalls / 6) + (inn.totalBalls % 6)/10).toFixed(1);
             els.oversText.textContent = `Overs: ${overs} / ${gameState.maxOvers}`;
             const rr = inn.totalBalls > 0 ? ((inn.runs * 6) / inn.totalBalls).toFixed(2) : "0.00";
@@ -300,6 +277,44 @@
             saveState();
         }
 
+        // Firebase
+        function initFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.database();
+                globalMatchRef = db.ref("shared_live_match/mobile_state");
+            } catch(e) {
+                console.warn("Firebase failed to initialize");
+            }
+        }
+
+        function syncToCloud() {
+            if (!globalMatchRef) {
+                els.status.textContent = "❌ Firebase not available";
+                return;
+            }
+            globalMatchRef.set(gameState).then(() => {
+                els.status.textContent = "✅ Synced Successfully";
+                setTimeout(() => els.status.textContent = "Online", 2000);
+            }).catch(err => {
+                els.status.textContent = "Sync Failed";
+                console.error(err);
+            });
+        }
+
+        function loadFromCloud() {
+            if (!globalMatchRef) return;
+            globalMatchRef.once("value").then(snapshot => {
+                const data = snapshot.val();
+                if (data) {
+                    gameState = data;
+                    saveState();
+                    renderScoreboard();
+                    els.status.textContent = "✅ Loaded from Cloud";
+                }
+            });
+        }
+
         // Button Listeners
         document.querySelectorAll('button.runs').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -319,8 +334,7 @@
 
         document.getElementById('btnWide').addEventListener('click', () => {
             const inn = getActiveData();
-            inn.runs += 1;
-            inn.bowler.runs += 1;
+            inn.runs += 1; inn.bowler.runs += 1;
             if (!inn.oversHistory[inn.oversHistory.length-1]) inn.oversHistory.push([]);
             inn.oversHistory[inn.oversHistory.length-1].push('WD');
             renderScoreboard();
@@ -328,10 +342,7 @@
 
         document.getElementById('btnNoBall').addEventListener('click', () => {
             const inn = getActiveData();
-            inn.runs += 1;
-            inn.bowler.runs += 1;
-            inn.striker.runs += 1;
-            inn.striker.balls++;
+            inn.runs += 1; inn.bowler.runs += 1; inn.striker.runs += 1; inn.striker.balls++;
             if (!inn.oversHistory[inn.oversHistory.length-1]) inn.oversHistory.push([]);
             inn.oversHistory[inn.oversHistory.length-1].push('NB');
             renderScoreboard();
@@ -339,40 +350,33 @@
 
         document.getElementById('btnWicket').addEventListener('click', () => {
             const inn = getActiveData();
-            inn.wickets++;
-            inn.bowler.wickets++;
+            inn.wickets++; inn.bowler.wickets++;
             if (!inn.oversHistory[inn.oversHistory.length-1]) inn.oversHistory.push([]);
             inn.oversHistory[inn.oversHistory.length-1].push('W');
             renderScoreboard();
         });
 
-        document.getElementById('btnUndo').addEventListener('click', () => {
-            alert("Undo is not fully implemented in this version.\nUse Reset Match if needed.");
-        });
-
+        els.btnCloudSave.addEventListener('click', syncToCloud);
         els.btnResetMatch.addEventListener('click', () => {
-            if (confirm("Reset entire match?")) {
-                try { localStorage.removeItem('lmp_offline_scoreboard'); } catch(e) {}
-                location.reload();
-            }
+            if (confirm("Reset match?")) location.reload();
         });
-
         els.btnExportPDF.addEventListener('click', () => {
             const inn = getActiveData();
             const win = window.open('', '_blank');
-            win.document.write(`<h2>LMP Cricket Score Book</h2><p><strong>${inn.battingTeam} vs ${inn.bowlingTeam}</strong></p><p>Score: ${inn.runs}/${inn.wickets}</p><p>Overs: ${Math.floor(inn.totalBalls/6)}.${inn.totalBalls%6}</p>`);
-            win.document.close();
-            win.print();
+            win.document.write(`<h2>LMP Score</h2><p>${inn.battingTeam} vs ${inn.bowlingTeam}</p><p>Score: ${inn.runs}/${inn.wickets}</p>`);
+            win.document.close(); win.print();
         });
 
-        els.btnCloudSave.addEventListener('click', () => {
-            alert("Cloud sync requires active internet.\n\nThis version saves locally automatically.");
-        });
-
-        // Initialize
+        // Init
         loadState();
+        if (navigator.onLine) {
+            initFirebase();
+            loadFromCloud();
+            els.status.textContent = "Online - Ready";
+        } else {
+            els.status.textContent = "Offline Mode - Local Save Active";
+        }
         renderScoreboard();
-        els.status.textContent = "Ready - Works Offline";
     </script>
 </body>
 </html>
