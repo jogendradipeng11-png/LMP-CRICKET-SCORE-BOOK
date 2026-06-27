@@ -222,7 +222,6 @@
     <div id="pdfPrintContainer" style="position: absolute; top: 0; left: 0; width: 750px; height: 0; overflow: hidden; background:#ffffff; font-family:Arial, sans-serif;"></div>
 
     <script>
-        // Initialize Firebase Realtime Database Connection Profiles Securely
         const firebaseConfig = {
             apiKey: "AIzaSyDNB9oNUc-h-V00tp1sfrNQ_AtIFYZEozc",
             authDomain: "lmp-cricket-score-book.firebaseapp.com",
@@ -267,7 +266,7 @@
 
         const localCache = localStorage.getItem('lmp_offline_scoreboard');
         if (localCache) {
-            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache memory parse mismatch."); }
+            try { gameState = JSON.parse(localCache); } catch(e) { console.error("Cache parsing mismatch."); }
         }
 
         function saveState() {
@@ -684,18 +683,19 @@
                 });
         });
 
+        // Fixed Initialization Block
         globalMatchRef.once("value").then((snapshot) => {
             const cloudData = snapshot.val();
-            // Critical Safe Guard: Only overwrite if local instance state is clean/empty 
-            // to stop lagging data delivery from erasing what the user is typing fast.
-            if (cloudData && gameState.innings1.totalBalls === 0 && gameState.innings1.runs === 0) {
+            if (cloudData) {
                 gameState = cloudData;
                 saveState();
-                renderScoreboard();
-                syncConfigUI();
             }
+            syncConfigUI();
+            renderScoreboard();
         }).catch(err => {
-            console.log("Offline bypass active or remote database connection error: " + err.message);
+            console.log("Offline fallback initialization active: " + err.message);
+            syncConfigUI();
+            renderScoreboard();
         });
 
         els.btnResetMatch.addEventListener('click', () => {
@@ -835,10 +835,6 @@
                 pDiv.innerHTML = ""; 
             });
         });
-
-        // Initialize UI values on layout instantiation
-        syncConfigUI();
-        renderScoreboard();
     </script>
 </body>
 </html>
