@@ -567,7 +567,12 @@
 
             if (isWicket) {
                 savePlayerStatsToRegistry(inn, 'striker'); 
-                const nextBatsmanPrompt = prompt("Wicket fell! Enter the next batsman name:", "New Batsman") || "New Batsman";
+                let nextBatsmanPrompt = "New Batsman";
+                try {
+                    nextBatsmanPrompt = prompt("Wicket fell! Enter the next batsman name:", "Batsman " + (inn.wickets + 1)) || ("Batsman " + (inn.wickets + 1));
+                } catch(e) {
+                    nextBatsmanPrompt = "Batsman " + (inn.wickets + 1);
+                }
                 inn.striker = { name: nextBatsmanPrompt, runs: 0, balls: 0 };
                 els.inpStriker.value = nextBatsmanPrompt;
             }
@@ -582,7 +587,12 @@
                 inn.nonStriker = temp;
                 inn.oversHistory.push([]);
                 
-                const nextBowlerPrompt = prompt("Over complete! Enter next bowler name:", inn.bowler.name) || "New Bowler";
+                let nextBowlerPrompt = inn.bowler.name;
+                try {
+                    nextBowlerPrompt = prompt("Over complete! Enter next bowler name:", inn.bowler.name) || "New Bowler";
+                } catch(e) {
+                    nextBowlerPrompt = "New Bowler";
+                }
                 
                 if(!inn.oversBowlers) inn.oversBowlers = [];
                 inn.oversBowlers.push(nextBowlerPrompt);
@@ -600,7 +610,6 @@
             syncConfigUI();
         }
 
-        // Changed from 'input' to 'change' to prevent state loss mid-type layout adjustments
         [els.inpBattingTeam, els.inpBowlingTeam, els.inpStriker, els.inpNonStriker, els.inpBowler].forEach(element => {
             element.addEventListener('change', syncInputsToState);
         });
@@ -677,18 +686,24 @@
 
         globalMatchRef.once("value").then((snapshot) => {
             const cloudData = snapshot.val();
-            if (cloudData) {
+            // Critical Safe Guard: Only overwrite if local instance state is clean/empty 
+            // to stop lagging data delivery from erasing what the user is typing fast.
+            if (cloudData && gameState.innings1.totalBalls === 0 && gameState.innings1.runs === 0) {
                 gameState = cloudData;
                 saveState();
                 renderScoreboard();
                 syncConfigUI();
             }
+        }).catch(err => {
+            console.log("Offline bypass active or remote database connection error: " + err.message);
         });
 
         els.btnResetMatch.addEventListener('click', () => {
             if(confirm("Are you sure you want to completely clear local and shared live match histories?")) {
                 localStorage.removeItem('lmp_offline_scoreboard');
                 globalMatchRef.remove().then(() => {
+                    location.reload();
+                }).catch(() => {
                     location.reload();
                 });
             }
@@ -738,7 +753,7 @@
                             </tr>
                 `;
 
-                const combinedBatsmen = { ...inn.batsmenRegistry };
+                const combinedBatsmen = Object.assign({}, inn.batsmenRegistry);
                 if(inn.striker.name) combinedBatsmen[inn.striker.name] = { runs: inn.striker.runs, balls: inn.striker.balls };
                 if(inn.nonStriker.name) combinedBatsmen[inn.nonStriker.name] = { runs: inn.nonStriker.runs, balls: inn.nonStriker.balls };
 
@@ -768,7 +783,7 @@
                             </tr>
                 `;
 
-                const combinedBowlers = { ...inn.bowlersRegistry };
+                const combinedBowlers = Object.assign({}, inn.bowlersRegistry);
                 if(inn.bowler.name) combinedBowlers[inn.bowler.name] = { runs: inn.bowler.runs, wickets: inn.bowler.wickets, balls: inn.bowler.balls };
 
                 Object.keys(combinedBowlers).forEach(bName => {
